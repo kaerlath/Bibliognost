@@ -586,7 +586,9 @@ public sealed class MainWindow : Window
             Gender = gender switch { 1 => "male", 2 => "female", 3 => "unisex", _ => "" },
             Sort = (ModSort)sort, Types = selectedTypes.ToArray(), Page = page, PublishedTodayOnly = latestReleases,
             DawntrailCompatibleOnly = plugin.Configuration.DawntrailCompatibleOnly,
-            AdultContent = plugin.Configuration.AdultContent switch { AdultContentMode.HideAdult => false, AdultContentMode.ShowAdult => true, _ => null },
+            // XMA's `nsfw=true` means "adult-only", not "include adult results".
+            // Show and Follow therefore omit the restriction and return the mixed catalog.
+            AdultContent = plugin.Configuration.AdultContent == AdultContentMode.HideAdult ? false : null,
         }, (ProviderSelection)providerSelection);
         mods.Clear();
         if (result.Success && result.Value is not null) { mods.AddRange(result.Value.Take(plugin.Configuration.ResultsPerPage)); status = latestReleases ? $"{mods.Count} releases published today across connected sources" + (result.Error is null ? "." : $". One source reported: {result.Error}") : $"{mods.Count} entries found" + (result.Error is null ? "." : $". One source reported: {result.Error}"); }

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.5 — Complete mixed XMA results
+
+- Corrected the XMA adult-content setting so **Show** includes ordinary and adult entries instead of accidentally requesting adult-only results.
+- Kept **Hide adult content** as the only mode that restricts the provider query.
+
 ## 0.23.4 — Exact provider ordering
 
 - Preserved XMA's own result order in the XIV Mod Archive-only view instead of re-sorting cards using partially available detail-page dates.
