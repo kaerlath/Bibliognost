@@ -75,7 +75,8 @@ $manifest | Add-Member -NotePropertyName IconUrl -NotePropertyValue "$rawBase/As
 $manifest | Add-Member -NotePropertyName DownloadLinkInstall -NotePropertyValue "$rawBase/latest.zip" -Force
 $manifest | Add-Member -NotePropertyName DownloadLinkUpdate -NotePropertyValue "$rawBase/latest.zip" -Force
 $manifest | Add-Member -NotePropertyName DownloadLinkTesting -NotePropertyValue "$rawBase/latest.zip" -Force
-@($manifest) | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $projectRoot 'repo.json') -Encoding utf8
+$manifestJson = $manifest | ConvertTo-Json -Depth 12
+"[$manifestJson]" | Set-Content -LiteralPath (Join-Path $projectRoot 'repo.json') -Encoding utf8
 
 $readmePath = Join-Path $projectRoot 'README.md'
 $readme = Get-Content -Raw -LiteralPath $readmePath
