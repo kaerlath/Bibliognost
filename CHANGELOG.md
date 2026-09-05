@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.3 — Complete XMA catalogue query
+
+- Made an unfiltered XMA search explicitly request every current website type, including gear, bodies, faces, hair, reshades, other, minions, mounts, furniture, skin, racial scaling, poses, VFX, animation, sound, Dalamud plugins, modding tools, and apps.
+- Changed the initial and cleared catalogue to XMA's **Last Version Update · Descending** ordering so it matches the website's complete current-results view.
+
 ## 0.23.2 — Packaged icon metadata correction
 
 - Added the 512×512 icon URL to the installed plugin manifest as well as the remote repository feed.

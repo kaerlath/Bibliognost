@@ -19,7 +19,7 @@ public sealed class MainWindow : Window
     private string tags = string.Empty;
     private string affects = string.Empty;
     private int gender;
-    private int sort;
+    private int sort = (int)ModSort.Updated;
     private int providerSelection;
     private bool showFilters;
     private readonly HashSet<string> selectedTypes = [];
@@ -142,7 +142,8 @@ public sealed class MainWindow : Window
     private void ClearFilters()
     {
         name = author = races = tags = affects = string.Empty;
-        gender = sort = 0;
+        gender = 0;
+        sort = (int)ModSort.Updated;
         selectedTypes.Clear();
     }
 

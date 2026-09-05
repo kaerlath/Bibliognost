@@ -4,6 +4,13 @@ namespace Bibliognost.Providers.XivModArchive;
 
 public sealed class XmaProvider(XmaHttpClient http) : IModProvider
 {
+    // XMA treats an omitted `types` parameter as its own partial/default selection.
+    // Sending every current website type explicitly is the only reliable "all types" query.
+    private static readonly string[] AllTypeIds =
+    [
+        "1", "3", "7", "9", "12", "15", "2", "4", "8",
+        "10", "14", "16", "17", "18", "19", "13", "6", "5",
+    ];
     private readonly Dictionary<string, ModSummary> knownMods = new(StringComparer.Ordinal);
     public const string ProviderId = "xivmodarchive";
     public string Id => ProviderId;
@@ -32,7 +39,7 @@ public sealed class XmaProvider(XmaHttpClient http) : IModProvider
             Add("tags", query.Tags);
             Add("affects", query.Affects);
             if (query.AdultContent.HasValue) pairs["nsfw"] = query.AdultContent.Value ? "true" : "false";
-            if (query.Types.Count > 0) pairs["types"] = string.Join(',', query.Types);
+            pairs["types"] = string.Join(',', query.Types.Count > 0 ? query.Types : AllTypeIds);
             var url = "search?" + string.Join('&', pairs.Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}"));
             var html = await http.GetStringAsync(url, cancellationToken);
             var parsed = XmaParser.ParseSearch(html);
