@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.7 — Correct Heliosphere links
+
+- Changed Heliosphere source links to use each mod's public vanity route rather than its internal API UUID.
+- Retained internal UUIDs for GraphQL details and image requests, with a safe link fallback when no vanity route is supplied.
+
 ## 0.23.6 — Banner version label
 
 - Added the installed Bibliognost version to the lower-right corner of each title banner.

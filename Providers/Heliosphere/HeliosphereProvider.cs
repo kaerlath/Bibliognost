@@ -90,7 +90,15 @@ public sealed class HeliosphereProvider(HeliosphereHttpClient http) : IModProvid
         var tags = package.TryGetProperty("tags", out var tagNodes) ? tagNodes.EnumerateArray().Select(t => String(t, "slug")).Where(t => t.Length > 0).ToArray() : [];
         var firstImage = Images(package).FirstOrDefault();
         var restricted = package.TryGetProperty("nsfw", out var r) && ((r.TryGetProperty("nsfw", out var n) && n.GetBoolean()) || (r.TryGetProperty("nsfl", out var l) && l.GetBoolean()));
-        return new ModSummary { ProviderId = ProviderId, RemoteId = id, Name = name, Author = package.TryGetProperty("user", out var u) ? String(u, "visibleName") : "", ModType = tags.FirstOrDefault() ?? "Heliosphere", ThumbnailUrl = firstImage == 0 ? null : HeliosphereHttpClient.ImageUrl(id, firstImage), PageUrl = "https://heliosphere.app/mod/" + id, IsAdult = restricted, Version = version.ValueKind == JsonValueKind.Object ? String(version, "version") : "", UpdatedAt = Date(version, "updatedAt"), PublishedAt = Date(package, "createdAt"), Tags = tags };
+        return new ModSummary { ProviderId = ProviderId, RemoteId = id, Name = name, Author = package.TryGetProperty("user", out var u) ? String(u, "visibleName") : "", ModType = tags.FirstOrDefault() ?? "Heliosphere", ThumbnailUrl = firstImage == 0 ? null : HeliosphereHttpClient.ImageUrl(id, firstImage), PageUrl = PublicPageUrl(package, id), IsAdult = restricted, Version = version.ValueKind == JsonValueKind.Object ? String(version, "version") : "", UpdatedAt = Date(version, "updatedAt"), PublishedAt = Date(package, "createdAt"), Tags = tags };
+    }
+    private static string PublicPageUrl(JsonElement package, string id)
+    {
+        var vanity = String(package, "vanityUrl").Trim();
+        if (Uri.TryCreate(vanity, UriKind.Absolute, out var absolute)) return absolute.AbsoluteUri;
+        vanity = vanity.Trim('/');
+        if (vanity.StartsWith("mod/", StringComparison.OrdinalIgnoreCase)) vanity = vanity[4..];
+        return "https://heliosphere.app/mod/" + (vanity.Length > 0 ? vanity : id);
     }
     private static string String(JsonElement node, string name) => node.ValueKind == JsonValueKind.Object && node.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : "";
     private static long? Long(JsonElement node, string name) => node.TryGetProperty(name, out var value) && value.TryGetInt64(out var result) ? result : null;
