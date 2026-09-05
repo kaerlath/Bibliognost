@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.23.6 — Banner version label
+
+- Added the installed Bibliognost version to the lower-right corner of each title banner.
+
 ## 0.23.5 — Complete mixed XMA results
 
 - Corrected the XMA adult-content setting so **Show** includes ordinary and adult entries instead of accidentally requesting adult-only results.

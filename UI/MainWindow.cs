@@ -516,6 +516,9 @@ public sealed class MainWindow : Window
         else { ImGui.SetCursorPos(new Vector2(18, 18)); ImGui.TextColored(BibliognostTheme.GoldBright, "B I B L I O G N O S T"); }
         var subtitleSize = ImGui.CalcTextSize(subtitle);
         draw.AddText(new Vector2(center - subtitleSize.X * .5f, min.Y + 70), ImGui.GetColorU32(new Vector4(.72f, .76f, .84f, 1f)), subtitle);
+        var version = $"v{typeof(Plugin).Assembly.GetName().Version?.ToString(3) ?? "unknown"}";
+        var versionSize = ImGui.CalcTextSize(version);
+        draw.AddText(max - versionSize - new Vector2(12, 8), ImGui.GetColorU32(new Vector4(.55f, .60f, .70f, .88f)), version);
         BibliognostTheme.DrawGlowRect(draw, min + new Vector2(1), max - new Vector2(1), .45f, id);
         ImGui.EndChild(); ImGui.Spacing();
     }
