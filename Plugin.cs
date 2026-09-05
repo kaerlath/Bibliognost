@@ -41,6 +41,8 @@ public sealed class Plugin : IDalamudPlugin
     internal TitleFontManager TitleFonts { get; }
     internal ModDeliveryService Delivery { get; }
     internal Dalamud.Interface.ManagedFontAtlas.IFontHandle? BannerFont => TitleFonts.Handle;
+    internal bool IsHeliosphereLoaded => PluginInterface.InstalledPlugins.Any(plugin =>
+        plugin.InternalName.Equals("heliosphere-plugin", StringComparison.OrdinalIgnoreCase) && plugin.IsLoaded);
 
     public Plugin()
     {
@@ -89,6 +91,12 @@ public sealed class Plugin : IDalamudPlugin
         Configuration.EncryptedXmaSession = normalized is null ? null : ProtectedSecretStore.Protect(normalized);
         Provider.SetSession(normalized);
         Configuration.Save();
+    }
+
+    internal bool OpenHeliosphereInstaller(ModSummary summary)
+    {
+        if (!IsHeliosphereLoaded || summary.ProviderId != HeliosphereProvider.ProviderId) return false;
+        return CommandManager.ProcessCommand($"/Heliosphere install {summary.PageUrl}");
     }
 
     internal void SetTitleFont(SystemFontChoice? choice)

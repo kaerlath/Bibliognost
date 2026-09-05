@@ -421,11 +421,19 @@ public sealed class MainWindow : Window
         }
         else
         {
-            var providerLabel = currentDetails.Summary.ProviderId == "heliosphere" ? "OPEN IN HELIOSPHERE" : "OPEN PROVIDER DOWNLOAD";
+            var isHeliosphere = currentDetails.Summary.ProviderId == "heliosphere";
+            var providerLabel = isHeliosphere
+                ? plugin.IsHeliosphereLoaded ? "INSTALL WITH HELIOSPHERE" : "OPEN IN HELIOSPHERE"
+                : "OPEN PROVIDER DOWNLOAD";
             if (BibliognostTheme.AccentButton("view-page", providerLabel, new Vector2(205, 34)))
-                Process.Start(new ProcessStartInfo(currentDetails.Summary.PageUrl) { UseShellExecute = true });
-            ImGui.TextColored(BibliognostTheme.Dim, currentDetails.Summary.ProviderId == "heliosphere"
-                ? "Heliosphere's official installer handles its manifest-based packages and choices."
+            {
+                if (!isHeliosphere || !plugin.OpenHeliosphereInstaller(currentDetails.Summary))
+                    Process.Start(new ProcessStartInfo(currentDetails.Summary.PageUrl) { UseShellExecute = true });
+            }
+            ImGui.TextColored(BibliognostTheme.Dim, isHeliosphere
+                ? plugin.IsHeliosphereLoaded
+                    ? "Hands this mod to Heliosphere's in-game installer for confirmation, variants, and Penumbra delivery."
+                    : "Install and enable Heliosphere for an in-game handoff; otherwise its official web page will open."
                 : "This provider requires its own website flow for this file or account tier.");
         }
         DrawInstallConfirmation();

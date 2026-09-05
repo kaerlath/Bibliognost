@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.23.8 — In-game Heliosphere handoff
+
+- Added an **Install with Heliosphere** action when the Heliosphere plugin is installed and loaded.
+- Sends Heliosphere's supported install command without bypassing its confirmation or variant-selection workflow.
+- Falls back to the mod's public Heliosphere page when its plugin or command handler is unavailable.
+
 ## 0.23.7 — Correct Heliosphere links
 
 - Changed Heliosphere source links to use each mod's public vanity route rather than its internal API UUID.
