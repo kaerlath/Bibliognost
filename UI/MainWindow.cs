@@ -65,6 +65,8 @@ public sealed class MainWindow : Window
         var previousSearch = search;
         var submit = ImGui.InputTextWithHint("##search", "Search every connected mod archive…", ref search, 180, ImGuiInputTextFlags.EnterReturnsTrue);
         var searchWasCleared = previousSearch.Length > 0 && search.Length == 0;
+        var xmaSearchWasStarted = providerSelection == (int)ProviderSelection.XivModArchive && previousSearch.Length == 0 && search.Length > 0;
+        if (xmaSearchWasStarted) sort = (int)ModSort.Relevance;
         ImGui.SameLine();
         ImGui.SetNextItemWidth(166);
         var providerLabels = new[] { "All sources", "XIV Mod Archive", "Heliosphere", "Nexus Mods" };
@@ -118,7 +120,7 @@ public sealed class MainWindow : Window
             ImGui.EndCombo();
         }
         ImGui.SameLine(); ImGui.SetNextItemWidth(fieldWidth);
-        var sorts = new[] { "Newest", "Recently updated", "Most downloaded", "Most viewed", "Name" };
+        var sorts = new[] { "Newest", "Recently updated", "Most downloaded", "Most viewed", "Name", "Relevance" };
         if (ImGui.BeginCombo("##sort-filter", sorts[sort]))
         {
             for (var i = 0; i < sorts.Length; i++) if (ImGui.Selectable(sorts[i], sort == i)) sort = i;

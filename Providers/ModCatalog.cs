@@ -20,6 +20,18 @@ public sealed class ModCatalog(IEnumerable<IModProvider> providers, Configuratio
         var results = await Task.WhenAll(selected.SelectMany(p => pages.Select(async page => (Provider: p, Result: await CachedSearchAsync(p, query with { Page = page }, cancellationToken)))));
         var successes = results.Where(x => x.Result.Success && x.Result.Value is not null).ToArray();
         if (successes.Length == 0) return ProviderResult<IReadOnlyList<ModSummary>>.Fail(string.Join("  ", results.Select(x => x.Result.Error).Where(x => x is not null)));
+        if (selection != ProviderSelection.All && selected.Length == 1)
+        {
+            // A provider-specific view should mirror that provider's own ordering exactly.
+            // Re-sorting XMA cards by dates scraped from detail pages moves cards with an
+            // unavailable/unparseable date to the bottom and makes the page look incomplete.
+            var providerPage = successes.SelectMany(x => x.Result.Value!)
+                .GroupBy(x => $"{x.ProviderId}:{x.RemoteId}")
+                .Select(group => group.First())
+                .ToArray();
+            var providerWarnings = results.Where(x => !x.Result.Success).Select(x => $"{x.Provider.DisplayName}: {x.Result.Error}").ToArray();
+            return new ProviderResult<IReadOnlyList<ModSummary>>(true, providerPage, providerWarnings.Length == 0 ? null : string.Join("  ", providerWarnings.Distinct()));
+        }
         var unique = successes.SelectMany(x => x.Result.Value!).GroupBy(x => $"{x.ProviderId}:{x.RemoteId}").Select(g => g.First());
         var groups = new List<List<ModSummary>>();
         foreach (var mod in unique)

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.23.4 — Exact provider ordering
+
+- Preserved XMA's own result order in the XIV Mod Archive-only view instead of re-sorting cards using partially available detail-page dates.
+- Kept normalized chronological sorting for the combined All Sources timeline, where cross-provider comparison is required.
+- Made a new main-field search in XMA-only mode use XMA's relevance ranking, matching the website and preventing a direct title match from being buried several update-sorted pages deep.
+
 ## 0.23.3 — Complete XMA catalogue query
 
 - Made an unfiltered XMA search explicitly request every current website type, including gear, bodies, faces, hair, reshades, other, minions, mounts, furniture, skin, racial scaling, poses, VFX, animation, sound, Dalamud plugins, modding tools, and apps.

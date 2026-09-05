@@ -52,7 +52,7 @@ public sealed record ModSearchQuery
     public bool PublishedTodayOnly { get; init; }
 }
 
-public enum ModSort { Newest, Updated, Downloads, Views, Name }
+public enum ModSort { Newest = 0, Updated = 1, Downloads = 2, Views = 3, Name = 4, Relevance = 5 }
 public enum SortDirection { Ascending, Descending }
 
 public sealed record ProviderResult<T>(bool Success, T? Value, string? Error)

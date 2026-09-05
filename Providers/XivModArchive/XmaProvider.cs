@@ -26,7 +26,7 @@ public sealed class XmaProvider(XmaHttpClient http) : IModProvider
         {
             var pairs = new Dictionary<string, string>
             {
-                ["sortby"] = query.Sort switch { ModSort.Updated => "time_edited", ModSort.Downloads => "downloads", ModSort.Views => "views", ModSort.Name => "name_slug", _ => "time_posted" },
+                ["sortby"] = query.Sort switch { ModSort.Relevance => "rank", ModSort.Updated => "time_edited", ModSort.Downloads => "downloads", ModSort.Views => "views", ModSort.Name => "name_slug", _ => "time_posted" },
                 ["sortorder"] = query.Direction == SortDirection.Ascending ? "asc" : "desc",
                 ["dt_compat"] = query.DawntrailCompatibleOnly ? "1" : "0",
                 ["page"] = Math.Max(1, query.Page).ToString(),
