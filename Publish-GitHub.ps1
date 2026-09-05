@@ -4,7 +4,7 @@ param(
     [ValidateNotNullOrEmpty()]
     [string]$RepositoryUrl,
 
-    [string]$CommitMessage = "Release Bibliognost 0.23.0"
+    [string]$CommitMessage = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -70,13 +70,15 @@ if (-not (Test-Path -LiteralPath $builtZip) -or -not (Test-Path -LiteralPath $bu
 Copy-Item -LiteralPath $builtZip -Destination (Join-Path $projectRoot 'latest.zip') -Force
 
 $manifest = Get-Content -Raw -LiteralPath $builtManifest | ConvertFrom-Json
+$version = ([string]$manifest.AssemblyVersion) -replace '\.0$', ''
 $manifest | Add-Member -NotePropertyName RepoUrl -NotePropertyValue $canonicalUrl -Force
-$manifest | Add-Member -NotePropertyName IconUrl -NotePropertyValue "$rawBase/Assets/Branding/Bibliognost-Icon.png" -Force
+$manifest | Add-Member -NotePropertyName IconUrl -NotePropertyValue "$rawBase/Assets/Branding/Bibliognost-Icon.png?v=$version" -Force
 $manifest | Add-Member -NotePropertyName DownloadLinkInstall -NotePropertyValue "$rawBase/latest.zip" -Force
 $manifest | Add-Member -NotePropertyName DownloadLinkUpdate -NotePropertyValue "$rawBase/latest.zip" -Force
 $manifest | Add-Member -NotePropertyName DownloadLinkTesting -NotePropertyValue "$rawBase/latest.zip" -Force
 $manifestJson = $manifest | ConvertTo-Json -Depth 12
 "[$manifestJson]" | Set-Content -LiteralPath (Join-Path $projectRoot 'repo.json') -Encoding utf8
+if ([string]::IsNullOrWhiteSpace($CommitMessage)) { $CommitMessage = "Release Bibliognost $version" }
 
 $readmePath = Join-Path $projectRoot 'README.md'
 $readme = Get-Content -Raw -LiteralPath $readmePath
@@ -96,7 +98,6 @@ git commit -m $CommitMessage
 if ($LASTEXITCODE -ne 0) { throw "Git could not create the release commit." }
 git branch -M main
 
-$version = ([string]$manifest.AssemblyVersion) -replace '\.0$', ''
 $tag = "v$version"
 if (git tag --list $tag) { throw "Tag $tag already exists. Increase the project version before publishing another release." }
 git tag -a $tag -m "Bibliognost $version"

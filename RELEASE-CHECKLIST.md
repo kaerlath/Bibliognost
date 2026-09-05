@@ -6,7 +6,7 @@
 2. Make the repository **public** before giving the custom-repository URL to testers. Dalamud cannot authenticate to GitHub's private raw-file URLs. It may remain private only while you are preparing it for release.
 3. From this folder, run the one-line command documented below.
 4. Complete GitHub's browser sign-in if Git Credential Manager asks.
-5. Confirm that the `v0.23.0` Actions run creates a GitHub release containing `latest.zip`.
+5. Confirm that the new version tag's Actions run creates a GitHub release containing `latest.zip`.
 6. Give testers the raw `repo.json` URL printed by the script.
 
 ```powershell

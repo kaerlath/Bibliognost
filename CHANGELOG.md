@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.23.1 — Plugin-list icon correction
+
+- Resized the illuminated archive sigil to Dalamud's supported 512×512 plugin-list dimensions.
+
 ## 0.23.0 — Private testing release
 
 - Added XMA, Heliosphere, and Final Fantasy XIV-scoped Nexus providers.
@@ -10,4 +14,3 @@
 - Added guarded download and Penumbra import workflows with explicit confirmation and history.
 - Added manual installed-mod update scanning, review, ignore, and unlink controls.
 - Added in-game XMA cookie help and a native download-folder picker.
-
