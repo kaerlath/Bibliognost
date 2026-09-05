@@ -1,0 +1,23 @@
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Version>0.23.0.0</Version>
+    <Author>Lynnaes Krasikaz</Author>
+    <Name>Bibliognost</Name>
+    <InternalName>Bibliognost</InternalName>
+    <Punchline>Browse the Eorzean mod archive without leaving the game.</Punchline>
+    <Description>A polished, provider-based in-game catalog for discovering Final Fantasy XIV mods.</Description>
+    <Tags>mods;catalog;utility;xma;heliosphere;nexus</Tags>
+    <IsPackable>false</IsPackable>
+    <RepoUrl>https://github.com/kaerlath/Bibliognost</RepoUrl>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Assets\Fonts\Charito.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Fonts\Charito-OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Branding\Bibliognost-Icon.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

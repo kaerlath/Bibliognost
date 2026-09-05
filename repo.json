@@ -1,0 +1,28 @@
+{
+  "Author": "Lynnaes Krasikaz",
+  "Name": "Bibliognost",
+  "InternalName": "Bibliognost",
+  "AssemblyVersion": "0.23.0.0",
+  "Description": "A polished, provider-based in-game catalog for discovering Final Fantasy XIV mods.",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "mods",
+    "catalog",
+    "utility",
+    "xma",
+    "heliosphere",
+    "nexus"
+  ],
+  "DalamudApiLevel": 15,
+  "LoadRequiredState": 0,
+  "LoadSync": false,
+  "CanUnloadAsync": false,
+  "LoadPriority": 0,
+  "Punchline": "Browse the Eorzean mod archive without leaving the game.",
+  "AcceptsFeedback": true,
+  "RepoUrl": "https://github.com/kaerlath/Bibliognost",
+  "IconUrl": "https://raw.githubusercontent.com/kaerlath/Bibliognost/main/Assets/Branding/Bibliognost-Icon.png",
+  "DownloadLinkInstall": "https://raw.githubusercontent.com/kaerlath/Bibliognost/main/latest.zip",
+  "DownloadLinkUpdate": "https://raw.githubusercontent.com/kaerlath/Bibliognost/main/latest.zip",
+  "DownloadLinkTesting": "https://raw.githubusercontent.com/kaerlath/Bibliognost/main/latest.zip"
+}
