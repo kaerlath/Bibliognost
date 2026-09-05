@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.2 — Packaged icon metadata correction
+
+- Added the 512×512 icon URL to the installed plugin manifest as well as the remote repository feed.
+- Added the conventional `images/icon.png` publication asset so Dalamud receives a stable, extension-safe image URL.
+
 ## 0.23.1 — Plugin-list icon correction
 
 - Resized the illuminated archive sigil to Dalamud's supported 512×512 plugin-list dimensions.

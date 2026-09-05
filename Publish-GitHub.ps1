@@ -54,6 +54,12 @@ if ($null -eq $repoNode) {
 } else {
     $repoNode.InnerText = $canonicalUrl
 }
+$iconNode = $propertyGroup.SelectSingleNode('IconUrl')
+if ($null -eq $iconNode) {
+    $iconNode = $projectXml.CreateElement('IconUrl')
+    [void]$propertyGroup.AppendChild($iconNode)
+}
+$iconNode.InnerText = "$rawBase/Images/icon.png"
 $projectXml.Save($projectFile)
 
 dotnet restore --locked-mode
@@ -72,7 +78,7 @@ Copy-Item -LiteralPath $builtZip -Destination (Join-Path $projectRoot 'latest.zi
 $manifest = Get-Content -Raw -LiteralPath $builtManifest | ConvertFrom-Json
 $version = ([string]$manifest.AssemblyVersion) -replace '\.0$', ''
 $manifest | Add-Member -NotePropertyName RepoUrl -NotePropertyValue $canonicalUrl -Force
-$manifest | Add-Member -NotePropertyName IconUrl -NotePropertyValue "$rawBase/Assets/Branding/Bibliognost-Icon.png?v=$version" -Force
+$manifest | Add-Member -NotePropertyName IconUrl -NotePropertyValue "$rawBase/Images/icon.png" -Force
 $manifest | Add-Member -NotePropertyName DownloadLinkInstall -NotePropertyValue "$rawBase/latest.zip" -Force
 $manifest | Add-Member -NotePropertyName DownloadLinkUpdate -NotePropertyValue "$rawBase/latest.zip" -Force
 $manifest | Add-Member -NotePropertyName DownloadLinkTesting -NotePropertyValue "$rawBase/latest.zip" -Force
