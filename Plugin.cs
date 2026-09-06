@@ -39,6 +39,7 @@ public sealed class Plugin : IDalamudPlugin
     internal XmaHelpWindow Help { get; }
     internal UpdatesWindow Updates { get; }
     internal TitleFontManager TitleFonts { get; }
+    internal CardFontManager CardFonts { get; }
     internal ModDeliveryService Delivery { get; }
     internal Dalamud.Interface.ManagedFontAtlas.IFontHandle? BannerFont => TitleFonts.Handle;
     internal bool IsHeliosphereLoaded => PluginInterface.InstalledPlugins.Any(plugin =>
@@ -47,7 +48,9 @@ public sealed class Plugin : IDalamudPlugin
     public Plugin()
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        BibliognostTheme.Apply(Configuration.ThemeName);
         TitleFonts = new TitleFontManager(Configuration);
+        CardFonts = new CardFontManager(Configuration);
         Delivery = new ModDeliveryService(Configuration);
         if (Configuration.Version < 2)
         {
@@ -109,6 +112,19 @@ public sealed class Plugin : IDalamudPlugin
         Configuration.Save();
     }
 
+    internal void ApplyCatalogueTypography()
+    {
+        CardFonts.Apply(Configuration);
+        Configuration.Save();
+    }
+
+    internal void SetTheme(string name)
+    {
+        Configuration.ThemeName = name;
+        BibliognostTheme.Apply(name);
+        Configuration.Save();
+    }
+
     internal Task DeliverAsync(ModDetails details, bool install)
         => Delivery.DeliverAsync(details, install, details.Summary.ProviderId == XmaProvider.ProviderId ? http.GetDownloadAsync : null);
 
@@ -121,6 +137,7 @@ public sealed class Plugin : IDalamudPlugin
         Windows.RemoveAllWindows();
         Updates.Dispose();
         TitleFonts.Dispose();
+        CardFonts.Dispose();
         Delivery.Dispose(); Thumbnails.Dispose(); http.Dispose(); heliosphereHttp.Dispose(); nexusHttp.Dispose();
     }
 }

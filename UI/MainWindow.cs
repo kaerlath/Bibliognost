@@ -3,6 +3,7 @@ using System.Numerics;
 using Bibliognost.Models;
 using Bibliognost.Downloads;
 using Bibliognost.Providers;
+using Bibliognost.Services;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
 
@@ -201,12 +202,14 @@ public sealed class MainWindow : Window
         ImGui.PushID(mod.ProviderId + ":" + mod.RemoteId);
         var start = ImGui.GetCursorScreenPos();
         var imageHeight = plugin.Configuration.CompactCards ? Math.Clamp(width * .48f, 220f, 400f) : Math.Clamp(width * .68f, 320f, 570f);
-        var size = new Vector2(width, imageHeight + (plugin.Configuration.CompactCards ? 90 : 116));
+        var metadataHeight = plugin.Configuration.CardTitleFontSize + plugin.Configuration.CardAuthorFontSize +
+            (plugin.Configuration.CompactCards ? 0 : plugin.Configuration.CardTypeFontSize) + (plugin.Configuration.CompactCards ? 44 : 58);
+        var size = new Vector2(width, imageHeight + metadataHeight);
         ImGui.InvisibleButton("##card", size);
         var hovered = ImGui.IsItemHovered();
         var t = BibliognostTheme.AnimateHover("card-" + mod.ProviderId + ":" + mod.RemoteId, hovered);
         var draw = ImGui.GetWindowDrawList();
-        draw.AddRectFilled(start - new Vector2(0, t * 3), start + size - new Vector2(0, t * 3), ImGui.GetColorU32(Vector4.Lerp(BibliognostTheme.Surface, new Vector4(.08f, .08f, .09f, 1), t)), 5);
+        draw.AddRectFilled(start - new Vector2(0, t * 3), start + size - new Vector2(0, t * 3), ImGui.GetColorU32(Vector4.Lerp(BibliognostTheme.Surface, BibliognostTheme.Gold with { W = 1f }, t * .13f)), 5);
         draw.AddRect(start - new Vector2(0, t * 3), start + size - new Vector2(0, t * 3), ImGui.GetColorU32(Vector4.Lerp(new Vector4(.18f, .18f, .18f, 1), BibliognostTheme.Gold, t)), 5, ImDrawFlags.None, 1 + t);
         var imageMin = start + new Vector2(8, 8 - t * 3);
         var imageMax = imageMin + new Vector2(width - 16, imageHeight);
@@ -224,9 +227,22 @@ public sealed class MainWindow : Window
         var sourceSize = ImGui.CalcTextSize(source);
         draw.AddRectFilled(new Vector2(imageMax.X - sourceSize.X - 14, imageMin.Y + 7), new Vector2(imageMax.X - 5, imageMin.Y + sourceSize.Y + 13), ImGui.GetColorU32(new Vector4(.03f, .035f, .045f, .90f)), 3);
         draw.AddText(new Vector2(imageMax.X - sourceSize.X - 10, imageMin.Y + 10), ImGui.GetColorU32(BibliognostTheme.GoldBright), source);
-        draw.AddText(textPos, ImGui.GetColorU32(BibliognostTheme.Text), FitText(mod.Name, width - 16));
-        draw.AddText(textPos + new Vector2(0, 24), ImGui.GetColorU32(BibliognostTheme.Dim), FitText("by " + (mod.Author.Length == 0 ? "Unknown" : mod.Author), width - 16));
-        if (!plugin.Configuration.CompactCards) draw.AddText(textPos + new Vector2(0, 49), ImGui.GetColorU32(BibliognostTheme.Gold), FitText(mod.ModType.Length == 0 ? "XIV MOD ARCHIVE" : mod.ModType.ToUpperInvariant(), width - 16));
+        using (plugin.CardFonts.Push(CardFontRole.Title))
+        {
+            var title = FitText(mod.Name, width - 16);
+            draw.AddText(textPos, ImGui.GetColorU32(BibliognostTheme.Text), title);
+            if (plugin.Configuration.CardTitleBold)
+                draw.AddText(textPos + new Vector2(.7f, 0), ImGui.GetColorU32(BibliognostTheme.Text), title);
+        }
+        var authorPos = textPos + new Vector2(0, plugin.Configuration.CardTitleFontSize + 8);
+        using (plugin.CardFonts.Push(CardFontRole.Author))
+            draw.AddText(authorPos, ImGui.GetColorU32(BibliognostTheme.Dim), FitText("by " + (mod.Author.Length == 0 ? "Unknown" : mod.Author), width - 16));
+        if (!plugin.Configuration.CompactCards)
+        {
+            var typePos = authorPos + new Vector2(0, plugin.Configuration.CardAuthorFontSize + 8);
+            using (plugin.CardFonts.Push(CardFontRole.Type))
+                draw.AddText(typePos, ImGui.GetColorU32(BibliognostTheme.Gold), FitText(mod.ModType.Length == 0 ? "XIV MOD ARCHIVE" : mod.ModType.ToUpperInvariant(), width - 16));
+        }
         if (hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left)) _ = LoadDetailsAsync(mod);
         ImGui.PopID();
     }
@@ -642,6 +658,6 @@ public sealed class MainWindow : Window
         var draw = ImGui.GetWindowDrawList();
         var min = ImGui.GetWindowPos(); var max = min + ImGui.GetWindowSize();
         draw.AddRectFilled(min, max, ImGui.GetColorU32(BibliognostTheme.Surface));
-        for (var x = min.X; x < max.X; x += 42) draw.AddLine(new Vector2(x, min.Y), new Vector2(x, max.Y), ImGui.GetColorU32(new Vector4(.4f, .32f, .16f, .035f)));
+        for (var x = min.X; x < max.X; x += 42) draw.AddLine(new Vector2(x, min.Y), new Vector2(x, max.Y), ImGui.GetColorU32(BibliognostTheme.Gold with { W = .035f }));
     }
 }

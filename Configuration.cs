@@ -15,6 +15,17 @@ public sealed class Configuration : IPluginConfiguration
     public float CardWidth { get; set; } = 640f;
     public string? TitleFontName { get; set; }
     public string? TitleFontPath { get; set; }
+    public string ThemeName { get; set; } = "Archive Gold";
+    public string? CardTitleFontName { get; set; }
+    public string? CardTitleFontPath { get; set; }
+    public string? CardAuthorFontName { get; set; }
+    public string? CardAuthorFontPath { get; set; }
+    public string? CardTypeFontName { get; set; }
+    public string? CardTypeFontPath { get; set; }
+    public float CardTitleFontSize { get; set; } = 18f;
+    public float CardAuthorFontSize { get; set; } = 14f;
+    public float CardTypeFontSize { get; set; } = 14f;
+    public bool CardTitleBold { get; set; } = true;
     public List<string> ConfirmedSourceMatches { get; set; } = [];
     public List<string> RejectedSourceMatches { get; set; } = [];
     public string DownloadDirectory { get; set; } = string.Empty;

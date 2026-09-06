@@ -3,7 +3,7 @@
   "Author": "Lynnaes Krasikaz",
   "Name": "Bibliognost",
   "InternalName": "Bibliognost",
-    "AssemblyVersion": "0.23.10.0",
+    "AssemblyVersion": "0.23.11.0",
   "Description": "A polished, provider-based in-game catalog for discovering Final Fantasy XIV mods.",
   "ApplicableVersion": "any",
   "Tags": [

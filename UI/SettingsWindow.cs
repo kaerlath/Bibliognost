@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Diagnostics;
 using Bibliognost.Security;
+using Bibliognost.Services;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;
@@ -87,6 +88,15 @@ public sealed class SettingsWindow : Window
         ImGui.TextColored(BibliognostTheme.Dim, "The grid automatically reflows as the window or cards change size.");
         var compactCards = plugin.Configuration.CompactCards;
         if (ImGui.Checkbox("Compact card layout", ref compactCards)) { plugin.Configuration.CompactCards = compactCards; plugin.Configuration.Save(); }
+        DrawSectionTitle("CATALOG TYPOGRAPHY", "CARD READABILITY");
+        ImGui.TextWrapped("Customize the mod name, creator, and listing type independently. Missing fonts automatically fall back to Dalamud's default face.");
+        DrawCardFontPicker(CardFontRole.Title, "MOD TITLE", plugin.Configuration.CardTitleFontName, plugin.Configuration.CardTitleFontPath, plugin.Configuration.CardTitleFontSize);
+        var titleBold = plugin.Configuration.CardTitleBold;
+        if (ImGui.Checkbox("Emphasize mod titles", ref titleBold)) { plugin.Configuration.CardTitleBold = titleBold; plugin.Configuration.Save(); }
+        DrawCardFontPicker(CardFontRole.Author, "AUTHOR", plugin.Configuration.CardAuthorFontName, plugin.Configuration.CardAuthorFontPath, plugin.Configuration.CardAuthorFontSize);
+        DrawCardFontPicker(CardFontRole.Type, "LISTING TYPE", plugin.Configuration.CardTypeFontName, plugin.Configuration.CardTypeFontPath, plugin.Configuration.CardTypeFontSize);
+        DrawSectionTitle("INTERFACE THEME", "COLOR PALETTE");
+        DrawThemePicker();
         DrawSectionTitle("DOWNLOADS", "DELIVERY & HISTORY");
         var downloadDirectory = EffectiveDownloadDirectory();
         ImGui.TextColored(BibliognostTheme.Dim, "DOWNLOAD LOCATION");
@@ -182,6 +192,79 @@ public sealed class SettingsWindow : Window
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("If this font disappears or cannot be opened, Bibliognost falls back to Segoe UI Black, Segoe UI Bold, Arial Black, then Dalamud's default font.");
     }
 
+    private void DrawCardFontPicker(CardFontRole role, string label, string? savedName, string? savedPath, float savedSize)
+    {
+        ImGui.PushID("card-font-" + role);
+        ImGui.TextColored(BibliognostTheme.Gold, label);
+        var display = string.IsNullOrWhiteSpace(savedPath) ? "Dalamud default" : savedName ?? Path.GetFileNameWithoutExtension(savedPath);
+        ImGui.SetNextItemWidth(Math.Min(390, Math.Max(190, ImGui.GetContentRegionAvail().X - 180)));
+        if (ImGui.BeginCombo("##face", display))
+        {
+            if (ImGui.Selectable("Dalamud default", string.IsNullOrWhiteSpace(savedPath))) SetCardFont(role, null);
+            ImGui.Separator();
+            foreach (var font in plugin.CardFonts.Fonts)
+            {
+                var selected = string.Equals(savedPath, font.Path, StringComparison.OrdinalIgnoreCase);
+                if (ImGui.Selectable(font.Name, selected)) SetCardFont(role, font);
+                if (selected) ImGui.SetItemDefaultFocus();
+            }
+            ImGui.EndCombo();
+        }
+        ImGui.SameLine();
+        var size = savedSize;
+        ImGui.SetNextItemWidth(145);
+        if (ImGui.SliderFloat("##size", ref size, role == CardFontRole.Title ? 14f : 11f, role == CardFontRole.Title ? 28f : 22f, "%.0f px", ImGuiSliderFlags.AlwaysClamp))
+            SetCardFontSize(role, size);
+        if (ImGui.IsItemDeactivatedAfterEdit()) plugin.ApplyCatalogueTypography();
+        ImGui.PopID();
+    }
+
+    private void SetCardFont(CardFontRole role, SystemFontChoice? font)
+    {
+        switch (role)
+        {
+            case CardFontRole.Title: plugin.Configuration.CardTitleFontName = font?.Name; plugin.Configuration.CardTitleFontPath = font?.Path; break;
+            case CardFontRole.Author: plugin.Configuration.CardAuthorFontName = font?.Name; plugin.Configuration.CardAuthorFontPath = font?.Path; break;
+            case CardFontRole.Type: plugin.Configuration.CardTypeFontName = font?.Name; plugin.Configuration.CardTypeFontPath = font?.Path; break;
+        }
+        plugin.ApplyCatalogueTypography();
+    }
+
+    private void SetCardFontSize(CardFontRole role, float size)
+    {
+        switch (role)
+        {
+            case CardFontRole.Title: plugin.Configuration.CardTitleFontSize = size; break;
+            case CardFontRole.Author: plugin.Configuration.CardAuthorFontSize = size; break;
+            case CardFontRole.Type: plugin.Configuration.CardTypeFontSize = size; break;
+        }
+        plugin.Configuration.Save();
+    }
+
+    private void DrawThemePicker()
+    {
+        ImGui.TextWrapped("Select a curated palette. The original black-and-gold archive remains the default.");
+        ImGui.SetNextItemWidth(Math.Min(420, ImGui.GetContentRegionAvail().X));
+        if (ImGui.BeginCombo("##theme", plugin.Configuration.ThemeName))
+        {
+            foreach (var palette in BibliognostTheme.Palettes)
+            {
+                var selected = palette.Name == plugin.Configuration.ThemeName;
+                if (ImGui.Selectable(palette.Name, selected)) plugin.SetTheme(palette.Name);
+                if (selected) ImGui.SetItemDefaultFocus();
+            }
+            ImGui.EndCombo();
+        }
+        var start = ImGui.GetCursorScreenPos();
+        var width = Math.Min(420, ImGui.GetContentRegionAvail().X);
+        ImGui.Dummy(new Vector2(width, 28));
+        var draw = ImGui.GetWindowDrawList();
+        draw.AddRectFilled(start, start + new Vector2(width, 28), ImGui.GetColorU32(BibliognostTheme.Surface), 4);
+        draw.AddRect(start, start + new Vector2(width, 28), ImGui.GetColorU32(BibliognostTheme.Gold), 4, ImDrawFlags.None, 2);
+        draw.AddCircleFilled(start + new Vector2(18, 14), 6, ImGui.GetColorU32(BibliognostTheme.GoldBright));
+        draw.AddText(start + new Vector2(34, 5), ImGui.GetColorU32(BibliognostTheme.Text), "Bibliognost theme preview");
+    }
+
     private async Task SaveAndVerifyAsync()
     {
         busy = true;
@@ -231,7 +314,7 @@ public sealed class SettingsWindow : Window
         var start = ImGui.GetCursorScreenPos(); var width = ImGui.GetContentRegionAvail().X;
         ImGui.Dummy(new Vector2(width, 38));
         var draw = ImGui.GetWindowDrawList();
-        draw.AddRectFilledMultiColor(start, start + new Vector2(width, 36), ImGui.GetColorU32(new Vector4(.08f, .055f, .025f, .78f)), ImGui.GetColorU32(new Vector4(.025f, .04f, .075f, .82f)), ImGui.GetColorU32(new Vector4(.018f, .024f, .045f, .88f)), ImGui.GetColorU32(new Vector4(.045f, .028f, .025f, .84f)));
+        draw.AddRectFilledMultiColor(start, start + new Vector2(width, 36), ImGui.GetColorU32(Vector4.Lerp(BibliognostTheme.Surface, BibliognostTheme.Gold, .16f)), ImGui.GetColorU32(BibliognostTheme.Surface), ImGui.GetColorU32(BibliognostTheme.Surface), ImGui.GetColorU32(Vector4.Lerp(BibliognostTheme.Surface, BibliognostTheme.Gold, .08f)));
         draw.AddLine(start + new Vector2(0, 35), start + new Vector2(width, 35), ImGui.GetColorU32(BibliognostTheme.Gold), 1.2f);
         draw.AddText(start + new Vector2(10, 6), ImGui.GetColorU32(BibliognostTheme.GoldBright), title);
         var subSize = ImGui.CalcTextSize(subtitle);
@@ -242,6 +325,6 @@ public sealed class SettingsWindow : Window
     {
         var draw = ImGui.GetWindowDrawList(); var min = ImGui.GetWindowPos(); var max = min + ImGui.GetWindowSize();
         draw.AddRectFilled(min, max, ImGui.GetColorU32(BibliognostTheme.Surface));
-        for (var x = min.X; x < max.X; x += 42) draw.AddLine(new Vector2(x, min.Y), new Vector2(x, max.Y), ImGui.GetColorU32(new Vector4(.4f, .32f, .16f, .035f)));
+        for (var x = min.X; x < max.X; x += 42) draw.AddLine(new Vector2(x, min.Y), new Vector2(x, max.Y), ImGui.GetColorU32(BibliognostTheme.Gold with { W = .035f }));
     }
 }

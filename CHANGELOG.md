@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.23.11 — Catalogue typography and themes
+
+- Added independent Windows font selectors and size controls for card titles, authors, and listing types, with safe Dalamud-font fallback.
+- Added optional stronger title emphasis and dynamic card spacing for larger typography.
+- Added Archive Gold, Moonlit Azure, Amethyst Nocturne, Verdant Aether, and Crimson Manuscript interface themes.
+- Applied the selected palette throughout cards, controls, borders, headings, backgrounds, and glow effects.
+
 ## 0.23.10 — Reliable Heliosphere routing
 
 - Uses Heliosphere's raw custom vanity value only when a real vanity is configured; computed UUID fallbacks are no longer treated as public routes.
