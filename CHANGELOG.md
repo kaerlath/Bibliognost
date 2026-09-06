@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.9 — Heliosphere standard-route fallback
+
+- Added Heliosphere variant short IDs to catalogue and detail queries.
+- Uses the default/latest variant's public short ID when a package has no custom vanity URL, preventing UUID-based 404 links and failed in-game handoffs.
+
 ## 0.23.8 — In-game Heliosphere handoff
 
 - Added an **Install with Heliosphere** action when the Heliosphere plugin is installed and loaded.

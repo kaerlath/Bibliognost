@@ -98,13 +98,16 @@ public sealed class HeliosphereProvider(HeliosphereHttpClient http) : IModProvid
         if (Uri.TryCreate(vanity, UriKind.Absolute, out var absolute)) return absolute.AbsoluteUri;
         vanity = vanity.Trim('/');
         if (vanity.StartsWith("mod/", StringComparison.OrdinalIgnoreCase)) vanity = vanity[4..];
-        return "https://heliosphere.app/mod/" + (vanity.Length > 0 ? vanity : id);
+        var shortId = package.TryGetProperty("variants", out var variants) && variants.GetArrayLength() > 0
+            ? String(variants[0], "shortId").Trim()
+            : string.Empty;
+        return "https://heliosphere.app/mod/" + (vanity.Length > 0 ? vanity : shortId.Length > 0 ? shortId : id);
     }
     private static string String(JsonElement node, string name) => node.ValueKind == JsonValueKind.Object && node.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : "";
     private static long? Long(JsonElement node, string name) => node.TryGetProperty(name, out var value) && value.TryGetInt64(out var result) ? result : null;
     private static DateTimeOffset? Date(JsonElement node, string name) => DateTimeOffset.TryParse(String(node, name), out var result) ? result : null;
 
-    private const string PackageFields = "id name tagline description createdAt updatedAt vanityUrl downloads tags { slug } nsfw { nsfw nsfl cw } images { id displayOrder } user { visibleName } variants { versions(limit: 1) { id version createdAt updatedAt affects } }";
+    private const string PackageFields = "id name tagline description createdAt updatedAt vanityUrl downloads tags { slug } nsfw { nsfw nsfl cw } images { id displayOrder } user { visibleName } variants { shortId versions(limit: 1) { id version createdAt updatedAt affects } }";
     private static readonly string BrowseQuery = $"query Browse($page:Int!,$count:Int!,$filter:FilterInfo!) {{ packages(page:$page,count:$count,filterInfo:$filter) {{ packages {{ {PackageFields} }} pageInfo {{ prev next total }} }} }}";
     private static readonly string SearchQuery = $"query Search($info:SearchRequest!,$filter:FilterInfo!,$amount:Int!,$page:Int) {{ searchVersions(info:$info,filterInfo:$filter,amount:$amount,page:$page) {{ versions {{ id version createdAt updatedAt affects variant {{ package {{ {PackageFields} }} }} }} pageInfo {{ prev next total }} }} }}";
     private static readonly string DetailsQuery = $"query Details($id:UUID!) {{ package(id:$id) {{ {PackageFields} }} }}";
