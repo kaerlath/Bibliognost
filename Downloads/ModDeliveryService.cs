@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.IO.Compression;
 using Bibliognost.Models;
 
 namespace Bibliognost.Downloads;
@@ -8,7 +9,7 @@ internal enum DeliveryState { Idle, Downloading, Installing, Complete, Failed, C
 internal sealed class ModDeliveryService : IDisposable
 {
     private const long MaximumBytes = 4L * 1024 * 1024 * 1024;
-    private static readonly string[] InstallableExtensions = [".ttmp", ".ttmp2", ".pmp", ".zip"];
+    private static readonly string[] InstallableExtensions = [".ttmp", ".ttmp2", ".pmp"];
     private readonly HttpClient client = new() { Timeout = TimeSpan.FromMinutes(30) };
     private readonly Configuration configuration;
     private CancellationTokenSource? cancellation;
@@ -24,7 +25,11 @@ internal sealed class ModDeliveryService : IDisposable
     internal ModDeliveryService(Configuration configuration) => this.configuration = configuration;
 
     internal static bool CanInstall(ModDetails details) => details.IsDirectDownload && IsInstallable(details.DownloadFileName ?? details.DownloadUrl);
-    internal static bool HasUnknownFileType(ModDetails details) => details.IsDirectDownload && string.IsNullOrWhiteSpace(Path.GetExtension((details.DownloadFileName ?? details.DownloadUrl)?.Split('?', '#')[0] ?? ""));
+    internal static bool HasUnknownFileType(ModDetails details)
+    {
+        var extension = Path.GetExtension((details.DownloadFileName ?? details.DownloadUrl)?.Split('?', '#')[0] ?? "");
+        return details.IsDirectDownload && (string.IsNullOrWhiteSpace(extension) || extension.Equals(".zip", StringComparison.OrdinalIgnoreCase));
+    }
 
     internal bool AppearsInstalled(string modName)
     {
@@ -78,9 +83,16 @@ internal sealed class ModDeliveryService : IDisposable
                 }
             }
             if (new FileInfo(path).Length == 0) throw new InvalidDataException("The provider returned an empty file.");
-            if (install && IsInstallable(path))
+            if (install)
             {
-                if (!HasZipSignature(path)) throw new InvalidDataException("The downloaded file is not a valid ZIP-based Penumbra package, so it was not installed.");
+                var package = InspectPackage(path);
+                if (!package.Installable)
+                {
+                    Status = $"Saved to Downloads: {Path.GetFileName(path)}. {package.Message}";
+                    Progress = 1; State = DeliveryState.Complete;
+                    Remember($"{DateTimeOffset.Now:u}  DOWNLOADED  {details.Summary.Name}  [{details.Summary.ProviderId}]  {Status}");
+                    return;
+                }
                 State = DeliveryState.Installing; Status = "Handing the validated package to Penumbra…";
                 var result = Plugin.PluginInterface.GetIpcSubscriber<string, int>("Penumbra.InstallMod.V5").InvokeFunc(path);
                 if (result != 0) throw new InvalidOperationException($"Penumbra declined the package (code {result}).");
@@ -122,6 +134,24 @@ internal sealed class ModDeliveryService : IDisposable
         using var stream = File.OpenRead(path);
         return stream.Read(signature) == 4 && signature[0] == (byte)'P' && signature[1] == (byte)'K'
             && ((signature[2] == 3 && signature[3] == 4) || (signature[2] == 5 && signature[3] == 6) || (signature[2] == 7 && signature[3] == 8));
+    }
+    private static (bool Installable, string Message) InspectPackage(string path)
+    {
+        if (!HasZipSignature(path)) return (false, "The file is not a valid ZIP-based Penumbra or TexTools package, so it was not sent to Penumbra.");
+        try
+        {
+            using var archive = ZipFile.OpenRead(path);
+            var names = archive.Entries.Select(entry => entry.FullName.Replace('\\', '/').TrimStart('/')).ToArray();
+            var hasPenumbraManifest = names.Any(name => name.Equals("meta.json", StringComparison.OrdinalIgnoreCase));
+            var hasTexToolsManifest = names.Any(name => Path.GetFileName(name).Equals("TTMPD.mpl", StringComparison.OrdinalIgnoreCase));
+            return hasPenumbraManifest || hasTexToolsManifest
+                ? (true, "Validated Penumbra-compatible package.")
+                : (false, "This is a general ZIP archive and contains neither a root meta.json nor a TexTools TTMPD.mpl manifest, so it was not sent to Penumbra.");
+        }
+        catch (InvalidDataException)
+        {
+            return (false, "The archive is damaged or uses an unsupported format, so it was not sent to Penumbra.");
+        }
     }
     private static string? HeaderName(ContentDispositionHeaderValue? header) => header?.FileNameStar?.Trim('"') ?? header?.FileName?.Trim('"');
     private static string SafeFileName(string? value)
