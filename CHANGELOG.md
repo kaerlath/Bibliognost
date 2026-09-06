@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.23.10 — Reliable Heliosphere routing
+
+- Uses Heliosphere's raw custom vanity value only when a real vanity is configured; computed UUID fallbacks are no longer treated as public routes.
+- Falls back to the variant short ID for standard Heliosphere web links.
+- Sends the internal package UUID directly to Heliosphere's in-game install command, fully separating command identity from browser routing.
+
 ## 0.23.9 — Heliosphere standard-route fallback
 
 - Added Heliosphere variant short IDs to catalogue and detail queries.

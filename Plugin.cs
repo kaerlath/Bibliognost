@@ -96,7 +96,9 @@ public sealed class Plugin : IDalamudPlugin
     internal bool OpenHeliosphereInstaller(ModSummary summary)
     {
         if (!IsHeliosphereLoaded || summary.ProviderId != HeliosphereProvider.ProviderId) return false;
-        return CommandManager.ProcessCommand($"/Heliosphere install {summary.PageUrl}");
+        // Heliosphere's command accepts its internal package UUID directly. Keeping the
+        // command identifier separate from the public route avoids web-link fallback bugs.
+        return CommandManager.ProcessCommand($"/heliosphere install {summary.RemoteId}");
     }
 
     internal void SetTitleFont(SystemFontChoice? choice)
