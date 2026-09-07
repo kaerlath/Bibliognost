@@ -198,15 +198,16 @@ public sealed class MainWindow : Window
             Math.Clamp(hostSize.Y * .88f, Math.Min(460f, hostSize.Y - 24f), 1080f));
         ImGui.SetNextWindowPos(hostPos + hostSize * .5f, ImGuiCond.Always, new Vector2(.5f));
         ImGui.SetNextWindowSize(overlaySize, ImGuiCond.Always);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
-        ImGui.PushStyleColor(ImGuiCol.PopupBg, Vector4.Zero);
-        if (ImGui.BeginPopup(popupId, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoBackground))
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(8));
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 1f);
+        ImGui.PushStyleColor(ImGuiCol.PopupBg, BibliognostTheme.Surface);
+        ImGui.PushStyleColor(ImGuiCol.Border, BibliognostTheme.Gold);
+        if (ImGui.BeginPopup(popupId, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoCollapse))
         {
             DrawDrawer(ImGui.GetContentRegionAvail().X);
             ImGui.EndPopup();
         }
-        ImGui.PopStyleColor();
+        ImGui.PopStyleColor(2);
         ImGui.PopStyleVar(2);
         if (!ImGui.IsPopupOpen(popupId)) details = null;
     }
@@ -353,9 +354,10 @@ public sealed class MainWindow : Window
         // Collapsing the description must never collapse the rest of the dossier.
         // Keep the showcase at the popup height and let its content child scroll.
         var panelHeight = availableHeight;
-        ImGui.PushStyleColor(ImGuiCol.ChildBg, Vector4.Zero);
+        ImGui.PushStyleColor(ImGuiCol.ChildBg, BibliognostTheme.Surface);
         ImGui.BeginChild("details", new Vector2(panelWidth, panelHeight), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
         selectionFlash = Math.Max(0, selectionFlash - ImGui.GetIO().DeltaTime * 1.8f);
+        BibliognostTheme.DrawGlowFrame("details-frame", true);
         ImGui.SetCursorPos(new Vector2(10, 10));
         ImGui.BeginChild("details-content", new Vector2(-10, -10), false);
         DrawDetailsHeader(currentDetails.Summary, selectionFlash);

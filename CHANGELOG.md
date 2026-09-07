@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.24.4 — Readable light-dismiss showcase
+
+- Restored the solid archive-themed background and illuminated border around the floating mod showcase so its dossier remains readable over image-heavy catalogue pages.
+- Kept the showcase non-modal: it has no Close button and dismisses when the user clicks anywhere outside its frame.
+
 ## 0.24.3 — Light-dismiss floating showcase
 
 - Changed the mod showcase from a boxed modal into a borderless floating presentation over the catalogue.
