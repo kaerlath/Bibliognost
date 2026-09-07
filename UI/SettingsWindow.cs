@@ -35,12 +35,16 @@ public sealed class SettingsWindow : Window
         ImGui.SetWindowFontScale(Math.Clamp(plugin.Configuration.UiScale, .85f, 1.40f));
         DrawBackdrop();
         MainWindow.DrawArchiveHeader(plugin, "CONNECTIONS · PRIVACY · DISPLAY", "settings-banner");
-        DrawSectionTitle("PROVIDERS", "CONNECTED ARCHIVES");
+        ImGui.TextColored(BibliognostTheme.Dim, "Choose a section to review or change its settings. Related controls are grouped together.");
+        if (BeginSettingsSection("PROVIDERS", "Connections, capability health, and diagnostics", true))
+        {
         DrawProviderState(true, "HELIOSPHERE", "Public GraphQL catalog · no sign-in required");
         DrawProviderState(HasXmaSession, "XIV MOD ARCHIVE", HasXmaSession ? "Public catalog · account session saved" : "Public catalog · optional account connection");
         DrawProviderState(HasNexusKey, "NEXUS MODS", HasNexusKey ? "Final Fantasy XIV catalog · API key saved" : "Final Fantasy XIV catalog · API key required");
         DrawProviderDiagnostics();
-        DrawSectionTitle("XIV MOD ARCHIVE", "SECURE SESSION CONNECTION");
+        }
+        if (BeginSettingsSection("XIV MOD ARCHIVE", "Secure session connection"))
+        {
         ImGui.TextWrapped("XMA signs players in through Discord. XMA does not provide Bibliognost with a safe password or app-login API, so your password should never be typed into this plugin.");
         ImGui.Spacing();
         if (BibliognostTheme.AccentButton("open-login", "1  SIGN IN TO XMA", new Vector2(180, 34)))
@@ -67,7 +71,9 @@ public sealed class SettingsWindow : Window
             status = "Stored XMA session cleared.";
         }
         ImGui.TextWrapped(status);
-        DrawSectionTitle("NEXUS MODS", "SECURE API CONNECTION");
+        }
+        if (BeginSettingsSection("NEXUS MODS", "Secure API connection"))
+        {
         ImGui.TextWrapped("Bibliognost restricts every Nexus request to Final Fantasy XIV. During private testing, Nexus uses a personal API key; a public release will use Nexus SSO after the application is registered.");
         if (BibliognostTheme.AccentButton("nexus-key-page", "1  GET API KEY", new Vector2(180, 34)))
             Process.Start(new ProcessStartInfo("https://www.nexusmods.com/users/myaccount?tab=api%20access") { UseShellExecute = true });
@@ -83,7 +89,9 @@ public sealed class SettingsWindow : Window
             nexusApiKey = string.Empty; plugin.SetNexusApiKey(null); nexusStatus = "Stored Nexus Mods key cleared.";
         }
         ImGui.TextWrapped(nexusStatus);
-        DrawSectionTitle("CATALOG LAYOUT", "PRESENTATION");
+        }
+        if (BeginSettingsSection("CATALOG LAYOUT", "Cards, density, and mod showcase"))
+        {
         ImGui.TextColored(BibliognostTheme.Gold, "RESPONSIVE LAYOUT PRESET");
         if (BibliognostTheme.AccentButton("narrow-grid", "NARROW", new Vector2(105, 28)))
         {
@@ -124,7 +132,16 @@ public sealed class SettingsWindow : Window
         if (ImGui.Combo("Showcase size", ref showcase, showcaseLabels, showcaseLabels.Length)) { plugin.Configuration.ShowcaseSize = (ShowcaseSize)showcase; plugin.Configuration.Save(); }
         var heroFill = plugin.Configuration.HeroImageFill;
         if (ImGui.Checkbox("Fill hero image area (may crop or stretch)", ref heroFill)) { plugin.Configuration.HeroImageFill = heroFill; plugin.Configuration.Save(); }
-        DrawSectionTitle("CATALOG TYPOGRAPHY", "CARD READABILITY");
+        }
+        if (BeginSettingsSection("TYPOGRAPHY", "Title, catalog, and showcase text"))
+        {
+        if (BeginTypographySubsection("TITLE TYPOGRAPHY", "Large Bibliognost wordmark", true))
+        {
+            DrawTitleFontPicker();
+            ImGui.TreePop();
+        }
+        if (BeginTypographySubsection("CATALOG TYPOGRAPHY", "Card and showcase readability", true))
+        {
         ImGui.TextWrapped("Customize the mod name, creator, and listing type independently. Missing fonts automatically fall back to Dalamud's default face.");
         DrawCardFontPicker(CardFontRole.Title, "MOD TITLE", plugin.Configuration.CardTitleFontName, plugin.Configuration.CardTitleFontPath, plugin.Configuration.CardTitleFontSize);
         var titleBold = plugin.Configuration.CardTitleBold;
@@ -135,7 +152,11 @@ public sealed class SettingsWindow : Window
         DrawScaleSlider("Dossier text", value => plugin.Configuration.DossierTextScale = value, plugin.Configuration.DossierTextScale);
         DrawScaleSlider("Description text", value => plugin.Configuration.DescriptionTextScale = value, plugin.Configuration.DescriptionTextScale);
         DrawScaleSlider("Action and button text", value => plugin.Configuration.ButtonTextScale = value, plugin.Configuration.ButtonTextScale);
-        DrawSectionTitle("INTERFACE THEME", "COLOR PALETTE");
+        ImGui.TreePop();
+        }
+        }
+        if (BeginSettingsSection("INTERFACE COLOR THEME", "Palette, overall scale, and motion"))
+        {
         DrawThemePicker();
         var uiScale = plugin.Configuration.UiScale * 100f;
         ImGui.SetNextItemWidth(280);
@@ -144,13 +165,17 @@ public sealed class SettingsWindow : Window
         var reducedMotion = plugin.Configuration.ReducedMotion;
         if (ImGui.Checkbox("Reduce interface motion", ref reducedMotion))
         { plugin.Configuration.ReducedMotion = reducedMotion; BibliognostTheme.ReducedMotion = reducedMotion; plugin.Configuration.Save(); }
-        DrawSectionTitle("UPDATE SCANNING", "REQUEST PACING");
+        }
+        if (BeginSettingsSection("UPDATE SCANNING", "Request pacing for manual update checks"))
+        {
         var scanDelay = plugin.Configuration.UpdateScanDelayMs;
         ImGui.SetNextItemWidth(280);
         if (ImGui.SliderInt("Delay between update checks", ref scanDelay, 0, 1500, "%d ms", ImGuiSliderFlags.AlwaysClamp))
         { plugin.Configuration.UpdateScanDelayMs = scanDelay; plugin.Configuration.Save(); }
         ImGui.TextColored(BibliognostTheme.Dim, "A short delay is courteous to archive providers and recommended for large collections.");
-        DrawSectionTitle("DOWNLOADS", "DELIVERY & HISTORY");
+        }
+        if (BeginSettingsSection("DOWNLOADS", "Location, retained packages, and recent history"))
+        {
         var downloadDirectory = EffectiveDownloadDirectory();
         ImGui.TextColored(BibliognostTheme.Dim, "DOWNLOAD LOCATION");
         ImGui.SameLine(); ImGui.TextWrapped(downloadDirectory);
@@ -165,9 +190,9 @@ public sealed class SettingsWindow : Window
         foreach (var entry in plugin.Configuration.DeliveryHistory.Take(5)) ImGui.TextWrapped(entry);
         if (plugin.Configuration.DeliveryHistory.Count > 0 && BibliognostTheme.AccentButton("clear-history", "CLEAR HISTORY", new Vector2(140, 28)))
         { plugin.Configuration.DeliveryHistory.Clear(); plugin.Configuration.Save(); }
-        DrawSectionTitle("TITLE TYPOGRAPHY", "WINDOWS FONT LIBRARY");
-        DrawTitleFontPicker();
-        DrawSectionTitle("CONTENT VISIBILITY", "BROWSING POLICY");
+        }
+        if (BeginSettingsSection("CONTENT VISIBILITY", "Adult previews and game-version compatibility"))
+        {
         var mode = (int)plugin.Configuration.AdultContent;
         ImGui.RadioButton("Follow XMA account", ref mode, 0);
         ImGui.RadioButton("Hide adult results", ref mode, 1);
@@ -182,6 +207,7 @@ public sealed class SettingsWindow : Window
             plugin.Configuration.BlurAdultPreviews = blur;
             plugin.Configuration.DawntrailCompatibleOnly = dt;
             plugin.Configuration.Save();
+        }
         }
         dialogs.Draw();
     }
@@ -427,17 +453,29 @@ public sealed class SettingsWindow : Window
         catch (Exception ex) { diagnosticExportStatus = $"Could not export the report: {ex.Message}"; }
     }
 
-    private static void DrawSectionTitle(string title, string subtitle)
+    private static bool BeginSettingsSection(string title, string description, bool openByDefault = false)
     {
         ImGui.Spacing();
-        var start = ImGui.GetCursorScreenPos(); var width = ImGui.GetContentRegionAvail().X;
-        ImGui.Dummy(new Vector2(width, 38));
-        var draw = ImGui.GetWindowDrawList();
-        draw.AddRectFilledMultiColor(start, start + new Vector2(width, 36), ImGui.GetColorU32(Vector4.Lerp(BibliognostTheme.Surface, BibliognostTheme.Gold, .16f)), ImGui.GetColorU32(BibliognostTheme.Surface), ImGui.GetColorU32(BibliognostTheme.Surface), ImGui.GetColorU32(Vector4.Lerp(BibliognostTheme.Surface, BibliognostTheme.Gold, .08f)));
-        draw.AddLine(start + new Vector2(0, 35), start + new Vector2(width, 35), ImGui.GetColorU32(BibliognostTheme.Gold), 1.2f);
-        draw.AddText(start + new Vector2(10, 6), ImGui.GetColorU32(BibliognostTheme.GoldBright), title);
-        var subSize = ImGui.CalcTextSize(subtitle);
-        draw.AddText(start + new Vector2(Math.Max(12, width - subSize.X - 10), 7), ImGui.GetColorU32(BibliognostTheme.Dim), subtitle);
+        var flags = ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.FramePadding;
+        if (openByDefault) flags |= ImGuiTreeNodeFlags.DefaultOpen;
+        var open = ImGui.CollapsingHeader($"{title}###settings-{title}", flags);
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(description);
+        if (open)
+        {
+            ImGui.TextColored(BibliognostTheme.Dim, description);
+            ImGui.Spacing();
+        }
+        return open;
+    }
+
+    private static bool BeginTypographySubsection(string title, string description, bool openByDefault = false)
+    {
+        var flags = ImGuiTreeNodeFlags.SpanAvailWidth;
+        if (openByDefault) flags |= ImGuiTreeNodeFlags.DefaultOpen;
+        var open = ImGui.TreeNodeEx($"{title}###typography-{title}", flags);
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(description);
+        if (open) ImGui.TextColored(BibliognostTheme.Dim, description);
+        return open;
     }
 
     private static void DrawBackdrop()

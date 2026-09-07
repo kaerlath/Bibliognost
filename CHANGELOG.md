@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.25.2 — Organized settings navigation
+
+- Replaced the ever-growing settings page with collapsible sections for Providers, XIV Mod Archive, Nexus Mods, Catalog Layout, Typography, Interface Color Theme, Update Scanning, Downloads, and Content Visibility.
+- Combined all font and text controls beneath one Typography group with nested Title Typography and Catalog Typography subsections.
+- Added concise descriptions to every section and opens Provider status by default while leaving infrequently changed areas collapsed.
+- Preserved every existing setting while making related controls easier to locate and understand.
+
 ## 0.25.1 — Cohesive settings and tools
 
 - Consolidated provider credentials, capability health, catalog request diagnostics, force refresh, clipboard reports, and safe diagnostic-file export in Settings.
