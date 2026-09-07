@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.24.2 — Mod showcase overlay
+
+- Replaced the width-changing side panel with a centered, dimmed showcase overlay, so opening a mod no longer reflows or moves the catalogue behind it.
+- Reworked the showcase hierarchy around a larger title and author header, a generous unclipped hero image, and the complete dossier and actions below.
+- Made the overlay scale to both narrow and wide Bibliognost windows while preserving its own scrolling content area.
+- Preserved favorites, collections, gallery previews, source matching, descriptions, and provider installation controls inside the new presentation.
+
 ## 0.24.1 — Personal collections and stronger matching
 
 - Added a dedicated in-game Library for Favorites, Recently Viewed, and user-created named collections.

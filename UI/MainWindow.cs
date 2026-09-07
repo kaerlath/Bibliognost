@@ -41,7 +41,7 @@ public sealed class MainWindow : Window
     private ModDetails? details;
     private IReadOnlyList<ModDetails> sourceDetails = [];
     private ModSummary? selectedSummary;
-    private float drawer;
+    private bool detailOverlayRequested;
     private bool showDescription;
     private float descriptionExpansion;
     private int selectedImageIndex;
@@ -175,19 +175,39 @@ public sealed class MainWindow : Window
 
     private void DrawWorkspace()
     {
-        var target = details is null ? 0f : 1f;
-        drawer += (target - drawer) * Math.Clamp(ImGui.GetIO().DeltaTime * 9f, 0f, 1f);
         var total = ImGui.GetContentRegionAvail().X;
-        var drawerWidth = drawer < .01f ? 0f : Math.Clamp(total * .42f, 500f, 900f) * drawer;
-        var catalogWidth = Math.Max(300, total - drawerWidth - (drawerWidth > 0 ? 12 : 0));
-        if (!ImGui.BeginTable("workspace", drawerWidth > 0 ? 2 : 1, ImGuiTableFlags.SizingFixedFit)) return;
-        ImGui.TableSetupColumn("catalog-column", ImGuiTableColumnFlags.WidthFixed, catalogWidth);
-        if (drawerWidth > 0) ImGui.TableSetupColumn("details-column", ImGuiTableColumnFlags.WidthFixed, drawerWidth);
-        ImGui.TableNextColumn();
-        DrawCatalog(catalogWidth);
+        DrawCatalog(total);
         DrawPager();
-        if (drawerWidth > 0) { ImGui.TableNextColumn(); DrawDrawer(drawerWidth); }
-        ImGui.EndTable();
+        DrawDetailsOverlay();
+    }
+
+    private void DrawDetailsOverlay()
+    {
+        const string popupId = "Mod Showcase###BibliognostModShowcase";
+        if (detailOverlayRequested)
+        {
+            ImGui.OpenPopup(popupId);
+            detailOverlayRequested = false;
+        }
+
+        if (details is null) return;
+        var hostPos = ImGui.GetWindowPos();
+        var hostSize = ImGui.GetWindowSize();
+        var overlaySize = new Vector2(
+            Math.Clamp(hostSize.X * .84f, Math.Min(560f, hostSize.X - 24f), 1280f),
+            Math.Clamp(hostSize.Y * .88f, Math.Min(460f, hostSize.Y - 24f), 1080f));
+        ImGui.SetNextWindowPos(hostPos + hostSize * .5f, ImGuiCond.Always, new Vector2(.5f));
+        ImGui.SetNextWindowSize(overlaySize, ImGuiCond.Always);
+        ImGui.PushStyleColor(ImGuiCol.ModalWindowDimBg, new Vector4(.003f, .006f, .012f, .82f));
+        ImGui.PushStyleColor(ImGuiCol.PopupBg, BibliognostTheme.Surface);
+        var open = true;
+        if (ImGui.BeginPopupModal(popupId, ref open, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoCollapse))
+        {
+            DrawDrawer(ImGui.GetContentRegionAvail().X);
+            ImGui.EndPopup();
+        }
+        ImGui.PopStyleColor(2);
+        if (!open) details = null;
     }
 
     private void DrawCatalog(float available)
@@ -330,14 +350,22 @@ public sealed class MainWindow : Window
         var currentDetails = details;
         var availableHeight = Math.Max(420, ImGui.GetContentRegionAvail().Y);
         // Collapsing the description must never collapse the rest of the dossier.
-        // Keep the drawer at the workspace height and let its content child scroll.
+        // Keep the showcase at the popup height and let its content child scroll.
         var panelHeight = availableHeight;
         ImGui.BeginChild("details", new Vector2(panelWidth, panelHeight), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
         selectionFlash = Math.Max(0, selectionFlash - ImGui.GetIO().DeltaTime * 1.8f);
         BibliognostTheme.DrawGlowFrame("details-frame", true);
         ImGui.SetCursorPos(new Vector2(16, 16));
         ImGui.BeginChild("details-content", new Vector2(-16, -16), false);
-        if (BibliognostTheme.AccentButton("close-details", "CLOSE", new Vector2(78, 27))) details = null;
+        ImGui.SetCursorPosX(Math.Max(ImGui.GetCursorPosX(), ImGui.GetWindowContentRegionMax().X - 78));
+        if (BibliognostTheme.AccentButton("close-details", "CLOSE", new Vector2(78, 27)))
+        {
+            details = null;
+            ImGui.CloseCurrentPopup();
+            ImGui.EndChild();
+            ImGui.EndChild();
+            return;
+        }
         ImGui.Spacing();
         DrawDetailsHeader(currentDetails.Summary, selectionFlash);
         var favorite = plugin.Configuration.FavoriteMods.Any(item => ModKey(item) == ModKey(currentDetails.Summary));
@@ -528,19 +556,20 @@ public sealed class MainWindow : Window
     {
         var min = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
-        const float height = 90f;
+        const float height = 112f;
         ImGui.InvisibleButton("##details-header", new Vector2(width, height));
         var max = min + new Vector2(width, height);
         var draw = ImGui.GetWindowDrawList();
         draw.AddRectFilledMultiColor(min, max, ImGui.GetColorU32(new Vector4(.10f, .075f, .025f, .94f)), ImGui.GetColorU32(new Vector4(.035f, .045f, .075f, .96f)), ImGui.GetColorU32(new Vector4(.018f, .022f, .045f, .98f)), ImGui.GetColorU32(new Vector4(.055f, .035f, .025f, .96f)));
         BibliognostTheme.DrawGlowRect(draw, min, max, .9f + flash);
         draw.AddLine(min + new Vector2(18, height - 18), max - new Vector2(18, 18), ImGui.GetColorU32(new Vector4(1f, .78f, .30f, .72f)), 1.5f);
-        var title = FitText(summary.Name.ToUpperInvariant(), width - 38);
-        var titlePos = min + new Vector2(18, 12);
-        draw.AddText(ImGui.GetFont(), ImGui.GetFontSize() * 1.22f, titlePos + new Vector2(1, 2), ImGui.GetColorU32(new Vector4(1f, .58f, .12f, .30f)), title);
-        draw.AddText(ImGui.GetFont(), ImGui.GetFontSize() * 1.22f, titlePos, ImGui.GetColorU32(BibliognostTheme.GoldBright), title);
-        draw.AddText(min + new Vector2(18, 47), ImGui.GetColorU32(BibliognostTheme.Dim), "CREATED BY  ");
-        draw.AddText(min + new Vector2(104, 47), ImGui.GetColorU32(BibliognostTheme.Text), summary.Author.Length == 0 ? "UNKNOWN" : summary.Author);
+        const float titleScale = 1.55f;
+        var title = FitText(summary.Name.ToUpperInvariant(), (width - 38) / titleScale);
+        var titlePos = min + new Vector2(18, 14);
+        draw.AddText(ImGui.GetFont(), ImGui.GetFontSize() * titleScale, titlePos + new Vector2(1, 2), ImGui.GetColorU32(new Vector4(1f, .58f, .12f, .30f)), title);
+        draw.AddText(ImGui.GetFont(), ImGui.GetFontSize() * titleScale, titlePos, ImGui.GetColorU32(BibliognostTheme.GoldBright), title);
+        draw.AddText(min + new Vector2(18, 70), ImGui.GetColorU32(BibliognostTheme.Dim), "CREATED BY  ");
+        draw.AddText(min + new Vector2(104, 70), ImGui.GetColorU32(BibliognostTheme.Text), summary.Author.Length == 0 ? "UNKNOWN" : summary.Author);
         ImGui.Spacing();
     }
 
@@ -709,6 +738,7 @@ public sealed class MainWindow : Window
         {
             sourceDetails = result.Value;
             details = sourceDetails.FirstOrDefault(item => item.Summary.ProviderId == mod.ProviderId) ?? sourceDetails[0];
+            detailOverlayRequested = true;
             var merged = details.Summary;
             var index = mods.FindIndex(item => item.ProviderId == mod.ProviderId && item.RemoteId == mod.RemoteId);
             if (index >= 0) mods[index] = mods[index] with { Sources = merged.Sources };
