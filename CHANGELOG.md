@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.1 — Cohesive settings and tools
+
+- Consolidated provider credentials, capability health, catalog request diagnostics, force refresh, clipboard reports, and safe diagnostic-file export in Settings.
+- Removed the duplicate Provider Health page and duplicate refresh controls from Tools.
+- Focused Tools on user workflows only: the installation queue, installation and delivery history, and saved-search watchlists.
+
 ## 0.25.0 — Library workflow and discovery suite
 
 - Added a reviewable installation queue with sequential validated delivery, removal, and per-item review.

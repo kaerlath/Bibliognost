@@ -1,8 +1,10 @@
 using System.Numerics;
 using System.Diagnostics;
+using System.Text;
 using Bibliognost.Security;
 using Bibliognost.Services;
 using Bibliognost.Models;
+using Bibliognost.Downloads;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;
@@ -17,6 +19,7 @@ public sealed class SettingsWindow : Window
     private string status;
     private string nexusStatus;
     private bool busy;
+    private string diagnosticExportStatus = string.Empty;
     private readonly FileDialogManager dialogs = new();
 
     public SettingsWindow(Plugin plugin) : base("Bibliognost Settings###BibliognostSettings")
@@ -373,6 +376,12 @@ public sealed class SettingsWindow : Window
     {
         ImGui.Spacing();
         ImGui.TextColored(BibliognostTheme.Gold, "PROVIDER HEALTH");
+        DrawCapabilityState(true, "HELIOSPHERE CATALOG", "Public catalog · no sign-in required");
+        DrawCapabilityState(HasXmaSession, "XMA AUTHENTICATION", HasXmaSession ? "Optional session stored securely" : "Public catalog only · no session stored");
+        DrawCapabilityState(HasNexusKey, "NEXUS AUTHENTICATION", HasNexusKey ? "API key stored securely" : "API key required for Nexus requests");
+        DrawCapabilityState(plugin.IsPenumbraLoaded, "PENUMBRA DELIVERY", plugin.IsPenumbraLoaded ? "Plugin available for validated imports" : "Penumbra is not currently available");
+        DrawCapabilityState(plugin.Delivery.State != DeliveryState.Failed, "LAST DELIVERY", plugin.Delivery.Status);
+        ImGui.TextColored(BibliognostTheme.Gold, "CATALOG REQUESTS");
         var diagnostics = plugin.Catalog.Diagnostics;
         if (diagnostics.Count == 0) ImGui.TextColored(BibliognostTheme.Dim, "No provider requests have completed in this session.");
         foreach (var item in diagnostics)
@@ -393,7 +402,29 @@ public sealed class SettingsWindow : Window
             var lines = diagnostics.Select(item => $"{item.DisplayName}: {(item.Error is null ? "OK" : "ERROR")} | results={item.ResultCount} | cache={item.FromCache} | duration={item.Duration.TotalSeconds:F1}s | lastSuccess={item.LastSuccess:u} | {item.Error}");
             ImGui.SetClipboardText($"Bibliognost {version}{Environment.NewLine}{string.Join(Environment.NewLine, lines)}");
         }
-        ImGui.TextColored(BibliognostTheme.Dim, "Reports exclude API keys, cookies, and download URLs.");
+        ImGui.SameLine();
+        if (BibliognostTheme.AccentButton("export-diagnostics", "EXPORT SAFE REPORT", new Vector2(185, 29))) ExportDiagnostics();
+        ImGui.TextColored(BibliognostTheme.Dim, "Reports exclude API keys, cookies, download URLs, and local mod contents.");
+        if (diagnosticExportStatus.Length > 0) ImGui.TextWrapped(diagnosticExportStatus);
+    }
+
+    private static void DrawCapabilityState(bool healthy, string label, string detail)
+    {
+        ImGui.TextColored(healthy ? new Vector4(.42f, .90f, .60f, 1) : new Vector4(1f, .68f, .25f, 1), healthy ? "●" : "○");
+        ImGui.SameLine(); ImGui.Text(label); ImGui.SameLine(); ImGui.TextColored(BibliognostTheme.Dim, detail);
+    }
+
+    private void ExportDiagnostics()
+    {
+        try
+        {
+            var directory = EffectiveDownloadDirectory(); Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, $"Bibliognost-Diagnostics-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
+            var lines = new List<string> { $"Bibliognost {typeof(Plugin).Assembly.GetName().Version}", $"Generated {DateTimeOffset.Now:u}", $"OS {Environment.OSVersion}", $"Penumbra available: {plugin.IsPenumbraLoaded}", $"Receipts {plugin.Configuration.InstalledModReceipts.Count}; Queue {plugin.Configuration.InstallationQueue.Count}; Saved searches {plugin.Configuration.SavedSearches.Count}" };
+            lines.AddRange(plugin.Catalog.Diagnostics.Select(item => $"{item.DisplayName}: {(item.Error is null ? "OK" : "ERROR")} | results={item.ResultCount} | cached={item.FromCache} | duration={item.Duration.TotalSeconds:F1}s | lastSuccess={item.LastSuccess:u} | error={item.Error}"));
+            File.WriteAllLines(path, lines, Encoding.UTF8); diagnosticExportStatus = $"Safe report saved to {path}";
+        }
+        catch (Exception ex) { diagnosticExportStatus = $"Could not export the report: {ex.Message}"; }
     }
 
     private static void DrawSectionTitle(string title, string subtitle)

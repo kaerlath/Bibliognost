@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Text;
 using Bibliognost.Models;
 using Bibliognost.Providers;
 using Bibliognost.Downloads;
@@ -29,7 +28,6 @@ public sealed class FeatureHubWindow : Window
         if (ImGui.BeginTabItem($"INSTALL QUEUE ({plugin.Configuration.InstallationQueue.Count})")) { DrawQueue(); ImGui.EndTabItem(); }
         if (ImGui.BeginTabItem("HISTORY")) { DrawHistory(); ImGui.EndTabItem(); }
         if (ImGui.BeginTabItem($"WATCHLISTS ({plugin.Configuration.SavedSearches.Sum(x => x.NewResultCount)})")) { DrawSearches(); ImGui.EndTabItem(); }
-        if (ImGui.BeginTabItem("PROVIDER HEALTH")) { DrawHealth(); ImGui.EndTabItem(); }
         ImGui.EndTabBar();
     }
 
@@ -107,48 +105,6 @@ public sealed class FeatureHubWindow : Window
         saved.NewResultCount = saved.LastTopResultKey.Length > 0 && firstKey != saved.LastTopResultKey ? result.Value.TakeWhile(x => $"{x.ProviderId}:{x.RemoteId}" != saved.LastTopResultKey).Count() : 0;
         saved.LastTopResultKey = firstKey; saved.LastChecked = DateTimeOffset.Now; plugin.Configuration.Save();
         status = saved.NewResultCount > 0 ? $"{saved.Name}: {saved.NewResultCount} new result(s)." : $"{saved.Name}: no new top results.";
-    }
-
-    private void DrawHealth()
-    {
-        ImGui.TextColored(BibliognostTheme.Gold, "CAPABILITY STATUS");
-        HealthLine("Heliosphere catalog", plugin.Catalog.Diagnostics.Any(x => x.ProviderId == "heliosphere" && x.Error is null), "Public catalog; no sign-in required");
-        HealthLine("XMA authentication", !string.IsNullOrWhiteSpace(plugin.Configuration.EncryptedXmaSession), "Optional saved session");
-        HealthLine("Nexus authentication", !string.IsNullOrWhiteSpace(plugin.Configuration.EncryptedNexusApiKey), "Personal API key");
-        HealthLine("Penumbra delivery", plugin.IsPenumbraLoaded, plugin.IsPenumbraLoaded ? "Plugin available" : "Install/enable Penumbra for direct imports");
-        HealthLine("Last delivery", plugin.Delivery.State != DeliveryState.Failed, plugin.Delivery.Status);
-        ImGui.Separator(); ImGui.TextColored(BibliognostTheme.Gold, "CATALOG REQUESTS");
-        foreach (var item in plugin.Catalog.Diagnostics)
-        {
-            var healthy = item.Error is null;
-            ImGui.TextColored(healthy ? new Vector4(.42f, .90f, .60f, 1) : new Vector4(1f, .42f, .35f, 1), healthy ? "HEALTHY" : "ERROR");
-            ImGui.SameLine(); ImGui.Text(item.DisplayName);
-            ImGui.TextColored(BibliognostTheme.Dim, $"Catalog: {item.ResultCount} results · {(item.FromCache ? "cache" : $"{item.Duration.TotalSeconds:F1}s")} · last attempt {item.LastAttempt.ToLocalTime():g}");
-            if (!healthy) ImGui.TextWrapped(item.Error);
-        }
-        if (BibliognostTheme.AccentButton("refresh", "FORCE CATALOG REFRESH", new Vector2(205, 29))) plugin.Main.ForceRefresh();
-        ImGui.SameLine(); if (BibliognostTheme.AccentButton("export", "EXPORT SAFE REPORT", new Vector2(185, 29))) ExportDiagnostics();
-        ImGui.TextColored(BibliognostTheme.Dim, "The report excludes cookies, API keys, download URLs, and local mod contents.");
-    }
-
-    private static void HealthLine(string label, bool healthy, string detail)
-    {
-        ImGui.TextColored(healthy ? new Vector4(.42f, .90f, .60f, 1) : new Vector4(1f, .68f, .25f, 1), healthy ? "●" : "○");
-        ImGui.SameLine(); ImGui.Text(label); ImGui.SameLine(); ImGui.TextColored(BibliognostTheme.Dim, detail);
-    }
-
-    private void ExportDiagnostics()
-    {
-        try
-        {
-            var directory = string.IsNullOrWhiteSpace(plugin.Configuration.DownloadDirectory) ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads") : plugin.Configuration.DownloadDirectory;
-            Directory.CreateDirectory(directory);
-            var path = Path.Combine(directory, $"Bibliognost-Diagnostics-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
-            var lines = new List<string> { $"Bibliognost {typeof(Plugin).Assembly.GetName().Version}", $"Generated {DateTimeOffset.Now:u}", $"OS {Environment.OSVersion}", $"Receipts {plugin.Configuration.InstalledModReceipts.Count}; Queue {plugin.Configuration.InstallationQueue.Count}; Saved searches {plugin.Configuration.SavedSearches.Count}" };
-            lines.AddRange(plugin.Catalog.Diagnostics.Select(x => $"{x.DisplayName}: {(x.Error is null ? "OK" : "ERROR")} results={x.ResultCount} cached={x.FromCache} duration={x.Duration.TotalSeconds:F1}s lastSuccess={x.LastSuccess:u} error={x.Error}"));
-            File.WriteAllLines(path, lines, Encoding.UTF8); status = $"Safe diagnostic report saved to {path}";
-        }
-        catch (Exception ex) { status = $"Could not export the report: {ex.Message}"; }
     }
 
     private static string ProviderLabel(string id) => id switch { "heliosphere" => "Heliosphere", "nexusmods" => "Nexus Mods", _ => "XIV Mod Archive" };
