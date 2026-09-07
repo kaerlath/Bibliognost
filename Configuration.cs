@@ -40,6 +40,26 @@ public sealed class Configuration : IPluginConfiguration
     public List<string> DeliveryHistory { get; set; } = [];
     public bool CompactCards { get; set; }
     public List<InstalledModReceipt> InstalledModReceipts { get; set; } = [];
+    public List<ModSummary> InstallationQueue { get; set; } = [];
+    public List<SavedModSearch> SavedSearches { get; set; } = [];
+    public string LastSearchText { get; set; } = string.Empty;
+    public string LastNameFilter { get; set; } = string.Empty;
+    public string LastAuthorFilter { get; set; } = string.Empty;
+    public string LastRaceFilter { get; set; } = string.Empty;
+    public string LastTagFilter { get; set; } = string.Empty;
+    public string LastAffectsFilter { get; set; } = string.Empty;
+    public int LastGenderFilter { get; set; }
+    public float LastCatalogScrollY { get; set; }
+    public int LastProviderSelection { get; set; }
+    public int LastSort { get; set; } = (int)ModSort.Updated;
+    public int LastPage { get; set; } = 1;
+    public List<string> LastSelectedTypes { get; set; } = [];
+    public ShowcaseSize ShowcaseSize { get; set; } = ShowcaseSize.Standard;
+    public InterfaceDensity InterfaceDensity { get; set; } = InterfaceDensity.Comfortable;
+    public bool HeroImageFill { get; set; }
+    public float DossierTextScale { get; set; } = 1f;
+    public float DescriptionTextScale { get; set; } = 1f;
+    public float ButtonTextScale { get; set; } = 1f;
 
     public void Save() => Plugin.PluginInterface.SavePluginConfig(this);
 }

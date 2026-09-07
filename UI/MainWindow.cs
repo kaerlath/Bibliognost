@@ -49,10 +49,26 @@ public sealed class MainWindow : Window
     private ModDetails? pendingInstall;
     private CancellationTokenSource? searchCancellation;
     private int libraryView;
+    private int selectedCardIndex;
+    private int lastGridColumns = 1;
+    private readonly List<ModSummary> relatedMods = [];
+    private ModDetails? comparisonDetails;
+    private string savedSearchName = string.Empty;
+    private bool restoreCatalogScroll = true;
+    private float previewZoom = 1f;
 
     public MainWindow(Plugin plugin) : base("Bibliognost — The Eorzean Mod Archive###BibliognostMain")
     {
         this.plugin = plugin;
+        search = plugin.Configuration.LastSearchText;
+        name = plugin.Configuration.LastNameFilter; author = plugin.Configuration.LastAuthorFilter;
+        races = plugin.Configuration.LastRaceFilter; tags = plugin.Configuration.LastTagFilter; affects = plugin.Configuration.LastAffectsFilter;
+        gender = Math.Clamp(plugin.Configuration.LastGenderFilter, 0, 3);
+        providerSelection = Math.Clamp(plugin.Configuration.LastProviderSelection, 0, 3);
+        sort = Math.Clamp(plugin.Configuration.LastSort, 0, 5);
+        page = Math.Max(1, plugin.Configuration.LastPage);
+        pageInput = page; pageInputText = page.ToString(); highestVisitedPage = page;
+        foreach (var type in plugin.Configuration.LastSelectedTypes) selectedTypes.Add(type);
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(720, 520), MaximumSize = new Vector2(4096, 4096) };
     }
 
@@ -62,6 +78,11 @@ public sealed class MainWindow : Window
         // Always refresh the active view when Bibliognost is shown again while preserving
         // the user's source, filters, sort, and current page.
         if (libraryView != 0) ShowLibrary(libraryView); else if (!loading) _ = SearchAsync();
+    }
+
+    public override void OnClose()
+    {
+        SaveBrowsingSession();
     }
 
     public override void Draw()
@@ -106,6 +127,11 @@ public sealed class MainWindow : Window
         if (BibliognostTheme.AccentButton("recently-viewed", "VIEWED", new Vector2(92, 27))) ShowLibrary(2);
         ImGui.SameLine();
         if (BibliognostTheme.AccentButton("collections", "COLLECTIONS", new Vector2(125, 27))) plugin.Library.ShowFor();
+        ImGui.SameLine();
+        if (BibliognostTheme.AccentButton("feature-hub", $"TOOLS ({plugin.Configuration.InstallationQueue.Count})", new Vector2(112, 27))) plugin.FeatureHub.IsOpen = true;
+        ImGui.SameLine();
+        if (BibliognostTheme.AccentButton("save-search", "SAVE SEARCH", new Vector2(120, 27))) ImGui.OpenPopup("Save Search");
+        DrawSaveSearchPopup();
         if (latestReleases) { ImGui.SameLine(); ImGui.TextColored(BibliognostTheme.GoldBright, "TODAY · ALL SOURCES"); }
         if (selectedTypes.Count > 0 || gender > 0 || name.Length > 0 || author.Length > 0 || races.Length > 0 || tags.Length > 0 || affects.Length > 0)
         {
@@ -116,6 +142,7 @@ public sealed class MainWindow : Window
 
         ImGui.TextColored(loading ? BibliognostTheme.Gold : BibliognostTheme.Dim, loading ? "SCANNING ARCHIVE…" : status);
         ImGui.Spacing();
+        HandleCatalogNavigation();
         DrawWorkspace();
     }
 
@@ -193,9 +220,10 @@ public sealed class MainWindow : Window
         if (details is null) return;
         var hostPos = ImGui.GetWindowPos();
         var hostSize = ImGui.GetWindowSize();
+        var proportions = plugin.Configuration.ShowcaseSize switch { ShowcaseSize.Compact => new Vector2(.64f, .72f), ShowcaseSize.Cinematic => new Vector2(.94f, .94f), _ => new Vector2(.84f, .88f) };
         var overlaySize = new Vector2(
-            Math.Clamp(hostSize.X * .84f, Math.Min(560f, hostSize.X - 24f), 1280f),
-            Math.Clamp(hostSize.Y * .88f, Math.Min(460f, hostSize.Y - 24f), 1080f));
+            Math.Clamp(hostSize.X * proportions.X, Math.Min(560f, hostSize.X - 24f), 1500f),
+            Math.Clamp(hostSize.Y * proportions.Y, Math.Min(460f, hostSize.Y - 24f), 1250f));
         ImGui.SetNextWindowPos(hostPos + hostSize * .5f, ImGuiCond.Always, new Vector2(.5f));
         ImGui.SetNextWindowSize(overlaySize, ImGuiCond.Always);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(8));
@@ -216,6 +244,7 @@ public sealed class MainWindow : Window
     {
         var requestedWidth = Math.Clamp(plugin.Configuration.CardWidth, 260, 900);
         var columns = Math.Max(1, (int)((available + 10) / (requestedWidth + 10)));
+        lastGridColumns = columns;
         var cardWidth = Math.Max(230, (available - (columns - 1) * 10) / columns);
         if (mods.Count == 0 && !loading)
         {
@@ -226,31 +255,36 @@ public sealed class MainWindow : Window
 
         var catalogTop = ImGui.GetCursorScreenPos();
         ImGui.BeginChild("catalog", new Vector2(available, -46), false);
+        if (restoreCatalogScroll) { ImGui.SetScrollY(plugin.Configuration.LastCatalogScrollY); restoreCatalogScroll = false; }
         if (ImGui.BeginTable("catalog-grid", columns, ImGuiTableFlags.SizingStretchSame, new Vector2(available, 0)))
         {
-            foreach (var mod in mods)
+            for (var index = 0; index < mods.Count; index++)
             {
+                var mod = mods[index];
                 if (plugin.Configuration.AdultContent == AdultContentMode.HideAdult && mod.IsAdult) continue;
                 ImGui.TableNextColumn();
-                DrawCard(mod, cardWidth - 8);
+                DrawCard(mod, cardWidth - 8, index);
             }
             ImGui.EndTable();
         }
+        plugin.Configuration.LastCatalogScrollY = ImGui.GetScrollY();
         ImGui.EndChild();
         var catalogBottom = ImGui.GetCursorScreenPos().Y - 4;
         // Mask clipped borders from the next card row so the pager has a clean edge.
         ImGui.GetWindowDrawList().AddRectFilled(new Vector2(catalogTop.X, catalogBottom - 12), new Vector2(catalogTop.X + available, catalogBottom + 2), ImGui.GetColorU32(BibliognostTheme.Surface));
     }
 
-    private void DrawCard(ModSummary mod, float width)
+    private void DrawCard(ModSummary mod, float width, int index)
     {
         ImGui.PushID(mod.ProviderId + ":" + mod.RemoteId);
         var start = ImGui.GetCursorScreenPos();
         var imageHeight = plugin.Configuration.CompactCards
             ? Math.Clamp(width * .48f, 130f, 400f)
             : Math.Clamp(width * .68f, 170f, 570f);
-        var metadataHeight = plugin.Configuration.CardTitleFontSize + plugin.Configuration.CardAuthorFontSize +
-            (plugin.Configuration.CompactCards ? 0 : plugin.Configuration.CardTypeFontSize) + (plugin.Configuration.CompactCards ? 44 : 58);
+        var showAuthor = plugin.Configuration.InterfaceDensity != InterfaceDensity.Minimal;
+        var showType = !plugin.Configuration.CompactCards && plugin.Configuration.InterfaceDensity == InterfaceDensity.Comfortable;
+        var metadataHeight = plugin.Configuration.CardTitleFontSize + (showAuthor ? plugin.Configuration.CardAuthorFontSize + 8 : 0) +
+            (showType ? plugin.Configuration.CardTypeFontSize + 8 : 0) + 34;
         var size = new Vector2(width, imageHeight + metadataHeight);
         ImGui.InvisibleButton("##card", size);
         var hovered = ImGui.IsItemHovered();
@@ -258,6 +292,7 @@ public sealed class MainWindow : Window
         var draw = ImGui.GetWindowDrawList();
         draw.AddRectFilled(start - new Vector2(0, t * 3), start + size - new Vector2(0, t * 3), ImGui.GetColorU32(Vector4.Lerp(BibliognostTheme.Surface, BibliognostTheme.Gold with { W = 1f }, t * .13f)), 5);
         draw.AddRect(start - new Vector2(0, t * 3), start + size - new Vector2(0, t * 3), ImGui.GetColorU32(Vector4.Lerp(new Vector4(.18f, .18f, .18f, 1), BibliognostTheme.Gold, t)), 5, ImDrawFlags.None, 1 + t);
+        if (index == selectedCardIndex) draw.AddRect(start - new Vector2(2), start + size + new Vector2(2), ImGui.GetColorU32(BibliognostTheme.GoldBright), 5, ImDrawFlags.None, 2.2f);
         var imageMin = start + new Vector2(8, 8 - t * 3);
         var imageMax = imageMin + new Vector2(width - 16, imageHeight);
         var texture = plugin.Thumbnails.Get(mod.ThumbnailUrl)?.GetWrapOrDefault();
@@ -274,6 +309,16 @@ public sealed class MainWindow : Window
         var sourceSize = ImGui.CalcTextSize(source);
         draw.AddRectFilled(new Vector2(imageMax.X - sourceSize.X - 14, imageMin.Y + 7), new Vector2(imageMax.X - 5, imageMin.Y + sourceSize.Y + 13), ImGui.GetColorU32(new Vector4(.03f, .035f, .045f, .90f)), 3);
         draw.AddText(new Vector2(imageMax.X - sourceSize.X - 10, imageMin.Y + 10), ImGui.GetColorU32(BibliognostTheme.GoldBright), source);
+        var receipt = plugin.Configuration.InstalledModReceipts.FirstOrDefault(item => item.ProviderId == mod.ProviderId && item.RemoteId == mod.RemoteId);
+        var queued = plugin.Configuration.InstallationQueue.Any(item => ModKey(item) == ModKey(mod));
+        var downloaded = plugin.Configuration.DeliveryHistory.Any(item => item.Contains(mod.Name, StringComparison.OrdinalIgnoreCase) && item.Contains("DOWNLOADED", StringComparison.OrdinalIgnoreCase));
+        if (receipt is not null || queued || downloaded)
+        {
+            var badge = queued ? "QUEUED" : receipt is not null ? IsNewer(mod.Version, receipt.InstalledVersion) ? "UPDATE" : "INSTALLED" : "DOWNLOADED";
+            var badgeSize = ImGui.CalcTextSize(badge);
+            draw.AddRectFilled(imageMin + new Vector2(6, 7), imageMin + new Vector2(badgeSize.X + 16, badgeSize.Y + 13), ImGui.GetColorU32(new Vector4(.02f, .09f, .06f, .94f)), 3);
+            draw.AddText(imageMin + new Vector2(10, 10), ImGui.GetColorU32(new Vector4(.45f, 1f, .66f, 1)), badge);
+        }
         using (plugin.CardFonts.Push(CardFontRole.Title))
         {
             var title = FitText(mod.Name, width - 16);
@@ -282,15 +327,16 @@ public sealed class MainWindow : Window
                 draw.AddText(textPos + new Vector2(.7f, 0), ImGui.GetColorU32(BibliognostTheme.Text), title);
         }
         var authorPos = textPos + new Vector2(0, plugin.Configuration.CardTitleFontSize + 8);
-        using (plugin.CardFonts.Push(CardFontRole.Author))
-            draw.AddText(authorPos, ImGui.GetColorU32(BibliognostTheme.Dim), FitText("by " + (mod.Author.Length == 0 ? "Unknown" : mod.Author), width - 16));
-        if (!plugin.Configuration.CompactCards)
+        if (showAuthor)
+            using (plugin.CardFonts.Push(CardFontRole.Author))
+                draw.AddText(authorPos, ImGui.GetColorU32(BibliognostTheme.Dim), FitText("by " + (mod.Author.Length == 0 ? "Unknown" : mod.Author), width - 16));
+        if (showType)
         {
             var typePos = authorPos + new Vector2(0, plugin.Configuration.CardAuthorFontSize + 8);
             using (plugin.CardFonts.Push(CardFontRole.Type))
                 draw.AddText(typePos, ImGui.GetColorU32(BibliognostTheme.Gold), FitText(mod.ModType.Length == 0 ? "XIV MOD ARCHIVE" : mod.ModType.ToUpperInvariant(), width - 16));
         }
-        if (hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left)) _ = LoadDetailsAsync(mod);
+        if (hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left)) { selectedCardIndex = index; _ = LoadDetailsAsync(mod); }
         ImGui.PopID();
     }
 
@@ -370,19 +416,34 @@ public sealed class MainWindow : Window
         }
         ImGui.SameLine();
         if (BibliognostTheme.AccentButton("collect-mod", "ADD TO COLLECTION", new Vector2(175, 28))) plugin.Library.ShowFor(currentDetails.Summary);
+        ImGui.SameLine();
+        var queued = plugin.Configuration.InstallationQueue.Any(item => ModKey(item) == ModKey(currentDetails.Summary));
+        if (BibliognostTheme.AccentButton("queue-mod", queued ? "REMOVE FROM QUEUE" : "ADD TO QUEUE", new Vector2(165, 28)))
+        {
+            plugin.Configuration.InstallationQueue.RemoveAll(item => ModKey(item) == ModKey(currentDetails.Summary));
+            if (!queued) plugin.Configuration.InstallationQueue.Add(currentDetails.Summary);
+            plugin.Configuration.Save();
+        }
         ImGui.Spacing();
         var gallery = currentDetails.ImageUrls.Count > 0 ? currentDetails.ImageUrls : currentDetails.Summary.ThumbnailUrl is null ? [] : [currentDetails.Summary.ThumbnailUrl];
         selectedImageIndex = Math.Clamp(selectedImageIndex, 0, Math.Max(0, gallery.Count - 1));
         var heroUrl = gallery.Count == 0 ? null : gallery[selectedImageIndex];
         var hero = plugin.Thumbnails.Get(heroUrl)?.GetWrapOrDefault();
+        if (gallery.Count > 1)
+        {
+            if (BibliognostTheme.AccentButton("hero-previous", "‹  PREVIOUS", new Vector2(112, 27))) selectedImageIndex = (selectedImageIndex - 1 + gallery.Count) % gallery.Count;
+            ImGui.SameLine(); ImGui.TextColored(BibliognostTheme.Dim, $"IMAGE {selectedImageIndex + 1} OF {gallery.Count}"); ImGui.SameLine();
+            if (BibliognostTheme.AccentButton("hero-next", "NEXT  ›", new Vector2(92, 27))) selectedImageIndex = (selectedImageIndex + 1) % gallery.Count;
+        }
         if (hero is not null && hero.Width > 0 && hero.Height > 0)
         {
             const float heroSafeInset = 6f;
             var contentWidth = ImGui.GetContentRegionAvail().X;
             var maxWidth = Math.Max(1, contentWidth - heroSafeInset * 2);
             var aspect = (float)hero.Width / hero.Height;
-            var heroSize = new Vector2(maxWidth, Math.Min(maxWidth / aspect, 560));
-            if (heroSize.Y == 560) heroSize.X = heroSize.Y * aspect;
+            var maxHeroHeight = plugin.Configuration.ShowcaseSize == ShowcaseSize.Cinematic ? 720f : plugin.Configuration.ShowcaseSize == ShowcaseSize.Compact ? 380f : 560f;
+            var heroSize = plugin.Configuration.HeroImageFill ? new Vector2(maxWidth, maxHeroHeight) : new Vector2(maxWidth, Math.Min(maxWidth / aspect, maxHeroHeight));
+            if (!plugin.Configuration.HeroImageFill && heroSize.Y == maxHeroHeight) heroSize.X = heroSize.Y * aspect;
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + heroSafeInset + Math.Max(0, (maxWidth - heroSize.X) * .5f));
             var imageMin = ImGui.GetCursorScreenPos();
             if (ImGui.InvisibleButton("##hero-image", heroSize)) ImGui.OpenPopup("Full Image Preview");
@@ -393,11 +454,13 @@ public sealed class MainWindow : Window
             ImGui.Spacing();
         }
         if (gallery.Count > 1) DrawGalleryStrip(gallery);
+        ImGui.SetWindowFontScale(Math.Clamp(plugin.Configuration.DossierTextScale, .85f, 1.5f));
         ImGui.TextColored(BibliognostTheme.Gold, "MOD DOSSIER");
         if (currentDetails.Summary.Version.Length > 0) { ImGui.TextColored(BibliognostTheme.Dim, "VERSION"); ImGui.SameLine(); ImGui.Text(currentDetails.Summary.Version); }
         ImGui.TextColored(BibliognostTheme.Dim, "SOURCES"); ImGui.SameLine(); ImGui.Text(SourceList(currentDetails.Summary));
         ImGui.Spacing();
         DrawWrappedTags(currentDetails.Summary.Tags.Take(18));
+        ImGui.SetWindowFontScale(Math.Clamp(plugin.Configuration.DescriptionTextScale, .85f, 1.5f));
         var descriptionLabel = showDescription ? "HIDE DESCRIPTION  ▲" : "VIEW DESCRIPTION  ▼";
         if (BibliognostTheme.AccentButton("toggle-description", descriptionLabel, new Vector2(210, 32))) showDescription = !showDescription;
         descriptionExpansion += ((showDescription ? 1f : 0f) - descriptionExpansion) * Math.Clamp(ImGui.GetIO().DeltaTime * 10f, 0f, 1f);
@@ -409,6 +472,7 @@ public sealed class MainWindow : Window
             ImGui.TextWrapped(currentDetails.Description.Length == 0 ? "No description was returned by this source." : currentDetails.Description);
             ImGui.EndChild(); ImGui.PopStyleColor();
         }
+        ImGui.SetWindowFontScale(Math.Clamp(plugin.Configuration.DossierTextScale, .85f, 1.5f));
         ImGui.Spacing();
         var sources = currentDetails.Summary.Sources;
         if (sources.Count > 1)
@@ -424,6 +488,8 @@ public sealed class MainWindow : Window
             ImGui.NewLine();
         }
         DrawSourceIdentityReview(currentDetails);
+        DrawRelatedAndComparison(currentDetails);
+        ImGui.SetWindowFontScale(Math.Clamp(plugin.Configuration.ButtonTextScale, .85f, 1.4f));
         ImGui.TextColored(BibliognostTheme.Gold, "GET THIS MOD");
         foreach (var sourceDetail in sourceDetails.Count > 0 ? sourceDetails : [currentDetails])
             DrawDeliveryControls(sourceDetail);
@@ -431,6 +497,7 @@ public sealed class MainWindow : Window
         ImGui.EndChild();
         ImGui.EndChild();
         ImGui.PopStyleColor();
+        ImGui.SetWindowFontScale(1f);
     }
 
     private void DrawSourceIdentityReview(ModDetails currentDetails)
@@ -682,8 +749,11 @@ public sealed class MainWindow : Window
         {
             var available = ImGui.GetContentRegionAvail() - new Vector2(0, 44);
             var scale = Math.Min(available.X / wrap.Width, available.Y / wrap.Height);
-            ImGui.Image(wrap.Handle, new Vector2(wrap.Width, wrap.Height) * Math.Max(.1f, scale));
+            ImGui.Image(wrap.Handle, new Vector2(wrap.Width, wrap.Height) * Math.Max(.1f, scale) * previewZoom);
         }
+        ImGui.SetNextItemWidth(170); ImGui.SliderFloat("ZOOM", ref previewZoom, .5f, 3f, "%.1fx", ImGuiSliderFlags.AlwaysClamp);
+        ImGui.SameLine(); if (BibliognostTheme.AccentButton("preview-reset-zoom", "FIT", new Vector2(65, 28))) previewZoom = 1f;
+        ImGui.SameLine();
         if (gallery.Count > 1 && BibliognostTheme.AccentButton("preview-previous", "PREVIOUS", new Vector2(105, 28)))
             selectedImageIndex = (selectedImageIndex - 1 + gallery.Count) % gallery.Count;
         if (gallery.Count > 1) ImGui.SameLine();
@@ -700,6 +770,7 @@ public sealed class MainWindow : Window
         searchCancellation?.Dispose();
         searchCancellation = new CancellationTokenSource();
         var token = searchCancellation.Token;
+        SaveBrowsingSession();
         loading = true; status = providerSelection switch { 1 => "Contacting XIV Mod Archive…", 2 => "Contacting Heliosphere…", 3 => "Contacting Nexus Mods…", _ => "Contacting mod archives…" };
         var result = await plugin.Catalog.SearchAsync(new ModSearchQuery
         {
@@ -737,7 +808,9 @@ public sealed class MainWindow : Window
             var index = mods.FindIndex(item => item.ProviderId == mod.ProviderId && item.RemoteId == mod.RemoteId);
             if (index >= 0) mods[index] = mods[index] with { Sources = merged.Sources };
             status = merged.Sources.Count > 1 ? $"Matched across {merged.Sources.Count} sources." : $"Reading {mod.Name}.";
-            selectedImageIndex = 0; showDescription = false; descriptionExpansion = 0; selectionFlash = 1f;
+            selectedImageIndex = 0; previewZoom = 1f; showDescription = false; descriptionExpansion = 0; selectionFlash = 1f;
+            comparisonDetails = null;
+            _ = LoadRelatedAsync(details.Summary);
         }
         else status = result.Error ?? "Details were unavailable.";
     }
@@ -752,6 +825,101 @@ public sealed class MainWindow : Window
     {
         plugin.Catalog.ClearSearchCache();
         _ = SearchAsync();
+    }
+
+    internal void ApplySavedSearch(SavedModSearch saved)
+    {
+        search = saved.SearchText; author = saved.Author; tags = saved.Tags; affects = saved.Affects;
+        providerSelection = Math.Clamp(saved.Provider, 0, 3); sort = Math.Clamp(saved.Sort, 0, 5);
+        selectedTypes.Clear(); foreach (var type in saved.Types) selectedTypes.Add(type);
+        page = 1; highestVisitedPage = 1; libraryView = 0; saved.NewResultCount = 0; plugin.Configuration.Save();
+        _ = SearchAsync();
+    }
+
+    private void DrawSaveSearchPopup()
+    {
+        if (!ImGui.BeginPopup("Save Search")) return;
+        ImGui.TextColored(BibliognostTheme.GoldBright, "SAVE CURRENT SEARCH AS WATCHLIST");
+        ImGui.SetNextItemWidth(300); ImGui.InputTextWithHint("##saved-search-name", "Watchlist name", ref savedSearchName, 60);
+        if (BibliognostTheme.AccentButton("confirm-save-search", "SAVE", new Vector2(90, 28)) && savedSearchName.Trim().Length > 0)
+        {
+            var saved = new SavedModSearch { Name = savedSearchName.Trim(), SearchText = search, Author = author, Tags = tags, Affects = affects, Provider = providerSelection, Sort = sort, Types = selectedTypes.ToList(), LastChecked = DateTimeOffset.Now, LastTopResultKey = mods.Count == 0 ? string.Empty : ModKey(mods[0]) };
+            plugin.Configuration.SavedSearches.RemoveAll(item => item.Name.Equals(saved.Name, StringComparison.OrdinalIgnoreCase));
+            plugin.Configuration.SavedSearches.Add(saved); plugin.Configuration.Save(); savedSearchName = string.Empty; ImGui.CloseCurrentPopup();
+        }
+        ImGui.EndPopup();
+    }
+
+    private void SaveBrowsingSession()
+    {
+        plugin.Configuration.LastSearchText = search; plugin.Configuration.LastProviderSelection = providerSelection;
+        plugin.Configuration.LastSort = sort; plugin.Configuration.LastPage = page; plugin.Configuration.LastSelectedTypes = selectedTypes.ToList();
+        plugin.Configuration.LastNameFilter = name; plugin.Configuration.LastAuthorFilter = author; plugin.Configuration.LastRaceFilter = races;
+        plugin.Configuration.LastTagFilter = tags; plugin.Configuration.LastAffectsFilter = affects; plugin.Configuration.LastGenderFilter = gender;
+        plugin.Configuration.Save();
+    }
+
+    private void HandleCatalogNavigation()
+    {
+        if (mods.Count == 0 || ImGui.GetIO().WantTextInput) return;
+        var moved = false;
+        if (ImGui.IsKeyPressed(ImGuiKey.LeftArrow) || ImGui.IsKeyPressed(ImGuiKey.GamepadDpadLeft)) { selectedCardIndex--; moved = true; }
+        if (ImGui.IsKeyPressed(ImGuiKey.RightArrow) || ImGui.IsKeyPressed(ImGuiKey.GamepadDpadRight)) { selectedCardIndex++; moved = true; }
+        if (ImGui.IsKeyPressed(ImGuiKey.UpArrow) || ImGui.IsKeyPressed(ImGuiKey.GamepadDpadUp)) { selectedCardIndex -= lastGridColumns; moved = true; }
+        if (ImGui.IsKeyPressed(ImGuiKey.DownArrow) || ImGui.IsKeyPressed(ImGuiKey.GamepadDpadDown)) { selectedCardIndex += lastGridColumns; moved = true; }
+        selectedCardIndex = Math.Clamp(selectedCardIndex, 0, mods.Count - 1);
+        if (moved) status = $"Selected {mods[selectedCardIndex].Name}. Press Enter to open.";
+        if ((ImGui.IsKeyPressed(ImGuiKey.Enter) || ImGui.IsKeyPressed(ImGuiKey.GamepadFaceDown)) && details is null) _ = LoadDetailsAsync(mods[selectedCardIndex]);
+        if ((ImGui.IsKeyPressed(ImGuiKey.Escape) || ImGui.IsKeyPressed(ImGuiKey.GamepadFaceRight)) && details is not null) { details = null; ImGui.CloseCurrentPopup(); }
+    }
+
+    private async Task LoadRelatedAsync(ModSummary current)
+    {
+        var result = await plugin.Catalog.SearchAsync(new ModSearchQuery { SearchText = current.ModType, Author = string.Empty, Tags = string.Join(' ', current.Tags.Take(3)), Sort = ModSort.Relevance, DawntrailCompatibleOnly = plugin.Configuration.DawntrailCompatibleOnly }, ProviderSelection.All);
+        relatedMods.Clear();
+        if (result.Success && result.Value is not null) relatedMods.AddRange(result.Value.Where(item => ModKey(item) != ModKey(current)).OrderByDescending(item => RelatedScore(current, item)).Take(6));
+    }
+
+    private void DrawRelatedAndComparison(ModDetails current)
+    {
+        if (comparisonDetails is not null)
+        {
+            ImGui.TextColored(BibliognostTheme.Gold, "COMPARE MODS");
+            if (ImGui.BeginTable("comparison", 2, ImGuiTableFlags.Borders | ImGuiTableFlags.SizingStretchSame))
+            {
+                foreach (var item in new[] { current, comparisonDetails }) { ImGui.TableNextColumn(); ImGui.TextWrapped(item.Summary.Name); ImGui.TextColored(BibliognostTheme.Dim, item.Summary.Author); ImGui.Text($"Version {item.Summary.Version}"); ImGui.TextWrapped(SourceList(item.Summary)); ImGui.TextWrapped(string.Join(", ", item.Summary.Tags.Take(8))); }
+                ImGui.EndTable();
+            }
+            if (BibliognostTheme.AccentButton("close-comparison", "CLOSE COMPARISON", new Vector2(175, 27))) comparisonDetails = null;
+        }
+        if (relatedMods.Count == 0) return;
+        ImGui.TextColored(BibliognostTheme.Gold, "RELATED MODS");
+        ImGui.TextColored(BibliognostTheme.Dim, "Ranked by listing type, creator, tags, and affected metadata—not by page proximity.");
+        foreach (var mod in relatedMods.Take(4))
+        {
+            ImGui.PushID("related-" + ModKey(mod)); ImGui.TextWrapped($"{mod.Name} · {mod.Author}");
+            if (BibliognostTheme.AccentButton("open-related", "OPEN", new Vector2(78, 25))) _ = LoadDetailsAsync(mod);
+            ImGui.SameLine(); if (BibliognostTheme.AccentButton("compare-related", "COMPARE", new Vector2(95, 25))) _ = LoadComparisonAsync(mod);
+            ImGui.PopID();
+        }
+    }
+
+    private async Task LoadComparisonAsync(ModSummary mod)
+    {
+        var result = await plugin.Catalog.GetDetailsAsync(mod); if (result.Success) comparisonDetails = result.Value;
+    }
+
+    private static float RelatedScore(ModSummary left, ModSummary right)
+    {
+        var score = left.ModType.Equals(right.ModType, StringComparison.OrdinalIgnoreCase) ? 3f : 0f;
+        if (left.Author.Equals(right.Author, StringComparison.OrdinalIgnoreCase)) score += 2f;
+        score += left.Tags.Intersect(right.Tags, StringComparer.OrdinalIgnoreCase).Count(); return score;
+    }
+
+    private static bool IsNewer(string available, string installed)
+    {
+        if (available.Length == 0 || installed.Length == 0) return false;
+        return Version.TryParse(available.TrimStart('v', 'V'), out var a) && Version.TryParse(installed.TrimStart('v', 'V'), out var b) ? a > b : !available.Equals(installed, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string FitText(string value, float maxWidth)

@@ -80,3 +80,21 @@ public sealed class ModCollection
     public string Name { get; set; } = string.Empty;
     public List<ModSummary> Mods { get; set; } = [];
 }
+
+public sealed class SavedModSearch
+{
+    public string Name { get; set; } = string.Empty;
+    public string SearchText { get; set; } = string.Empty;
+    public string Author { get; set; } = string.Empty;
+    public string Tags { get; set; } = string.Empty;
+    public string Affects { get; set; } = string.Empty;
+    public int Provider { get; set; }
+    public int Sort { get; set; } = (int)ModSort.Updated;
+    public List<string> Types { get; set; } = [];
+    public DateTimeOffset? LastChecked { get; set; }
+    public string LastTopResultKey { get; set; } = string.Empty;
+    public int NewResultCount { get; set; }
+}
+
+public enum ShowcaseSize { Compact, Standard, Cinematic }
+public enum InterfaceDensity { Comfortable, Compact, Minimal }

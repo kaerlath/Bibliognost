@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Diagnostics;
 using Bibliognost.Security;
 using Bibliognost.Services;
+using Bibliognost.Models;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;
@@ -108,6 +109,18 @@ public sealed class SettingsWindow : Window
         }
         var compactCards = plugin.Configuration.CompactCards;
         if (ImGui.Checkbox("Compact card layout", ref compactCards)) { plugin.Configuration.CompactCards = compactCards; plugin.Configuration.Save(); }
+        ImGui.TextColored(BibliognostTheme.Gold, "INFORMATION DENSITY");
+        var density = (int)plugin.Configuration.InterfaceDensity;
+        var densityLabels = new[] { "Comfortable — all card metadata", "Compact — title and author", "Minimal — title only" };
+        ImGui.SetNextItemWidth(300);
+        if (ImGui.Combo("##density", ref density, densityLabels, densityLabels.Length)) { plugin.Configuration.InterfaceDensity = (InterfaceDensity)density; plugin.Configuration.Save(); }
+        ImGui.TextColored(BibliognostTheme.Gold, "MOD SHOWCASE");
+        var showcase = (int)plugin.Configuration.ShowcaseSize;
+        var showcaseLabels = new[] { "Compact", "Standard", "Cinematic" };
+        ImGui.SetNextItemWidth(220);
+        if (ImGui.Combo("Showcase size", ref showcase, showcaseLabels, showcaseLabels.Length)) { plugin.Configuration.ShowcaseSize = (ShowcaseSize)showcase; plugin.Configuration.Save(); }
+        var heroFill = plugin.Configuration.HeroImageFill;
+        if (ImGui.Checkbox("Fill hero image area (may crop or stretch)", ref heroFill)) { plugin.Configuration.HeroImageFill = heroFill; plugin.Configuration.Save(); }
         DrawSectionTitle("CATALOG TYPOGRAPHY", "CARD READABILITY");
         ImGui.TextWrapped("Customize the mod name, creator, and listing type independently. Missing fonts automatically fall back to Dalamud's default face.");
         DrawCardFontPicker(CardFontRole.Title, "MOD TITLE", plugin.Configuration.CardTitleFontName, plugin.Configuration.CardTitleFontPath, plugin.Configuration.CardTitleFontSize);
@@ -115,6 +128,10 @@ public sealed class SettingsWindow : Window
         if (ImGui.Checkbox("Emphasize mod titles", ref titleBold)) { plugin.Configuration.CardTitleBold = titleBold; plugin.Configuration.Save(); }
         DrawCardFontPicker(CardFontRole.Author, "AUTHOR", plugin.Configuration.CardAuthorFontName, plugin.Configuration.CardAuthorFontPath, plugin.Configuration.CardAuthorFontSize);
         DrawCardFontPicker(CardFontRole.Type, "LISTING TYPE", plugin.Configuration.CardTypeFontName, plugin.Configuration.CardTypeFontPath, plugin.Configuration.CardTypeFontSize);
+        ImGui.TextColored(BibliognostTheme.Gold, "SHOWCASE TEXT SIZES");
+        DrawScaleSlider("Dossier text", value => plugin.Configuration.DossierTextScale = value, plugin.Configuration.DossierTextScale);
+        DrawScaleSlider("Description text", value => plugin.Configuration.DescriptionTextScale = value, plugin.Configuration.DescriptionTextScale);
+        DrawScaleSlider("Action and button text", value => plugin.Configuration.ButtonTextScale = value, plugin.Configuration.ButtonTextScale);
         DrawSectionTitle("INTERFACE THEME", "COLOR PALETTE");
         DrawThemePicker();
         var uiScale = plugin.Configuration.UiScale * 100f;
@@ -272,6 +289,17 @@ public sealed class SettingsWindow : Window
             case CardFontRole.Type: plugin.Configuration.CardTypeFontSize = size; break;
         }
         plugin.Configuration.Save();
+    }
+
+    private void DrawScaleSlider(string label, Action<float> apply, float current)
+    {
+        var percent = current * 100f;
+        ImGui.SetNextItemWidth(280);
+        if (ImGui.SliderFloat(label, ref percent, 85f, 150f, "%.0f%%", ImGuiSliderFlags.AlwaysClamp))
+        {
+            apply(percent / 100f);
+            plugin.Configuration.Save();
+        }
     }
 
     private void DrawThemePicker()

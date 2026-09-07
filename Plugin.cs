@@ -39,12 +39,15 @@ public sealed class Plugin : IDalamudPlugin
     internal XmaHelpWindow Help { get; }
     internal UpdatesWindow Updates { get; }
     internal LibraryWindow Library { get; }
+    internal FeatureHubWindow FeatureHub { get; }
     internal TitleFontManager TitleFonts { get; }
     internal CardFontManager CardFonts { get; }
     internal ModDeliveryService Delivery { get; }
     internal Dalamud.Interface.ManagedFontAtlas.IFontHandle? BannerFont => TitleFonts.Handle;
     internal bool IsHeliosphereLoaded => PluginInterface.InstalledPlugins.Any(plugin =>
         plugin.InternalName.Equals("heliosphere-plugin", StringComparison.OrdinalIgnoreCase) && plugin.IsLoaded);
+    internal bool IsPenumbraLoaded => PluginInterface.InstalledPlugins.Any(plugin =>
+        plugin.InternalName.Equals("Penumbra", StringComparison.OrdinalIgnoreCase) && plugin.IsLoaded);
 
     public Plugin()
     {
@@ -72,7 +75,8 @@ public sealed class Plugin : IDalamudPlugin
         Help = new XmaHelpWindow(this);
         Updates = new UpdatesWindow(this);
         Library = new LibraryWindow(this);
-        Windows.AddWindow(Main); Windows.AddWindow(Settings); Windows.AddWindow(Help); Windows.AddWindow(Updates); Windows.AddWindow(Library);
+        FeatureHub = new FeatureHubWindow(this);
+        Windows.AddWindow(Main); Windows.AddWindow(Settings); Windows.AddWindow(Help); Windows.AddWindow(Updates); Windows.AddWindow(Library); Windows.AddWindow(FeatureHub);
         CommandManager.AddHandler(Command, new CommandInfo((_, _) => Main.Toggle()) { HelpMessage = "Open Bibliognost." });
         PluginInterface.UiBuilder.Draw += Windows.Draw;
         PluginInterface.UiBuilder.OpenMainUi += Main.Toggle;

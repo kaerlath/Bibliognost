@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.25.0 — Library workflow and discovery suite
+
+- Added a reviewable installation queue with sequential validated delivery, removal, and per-item review.
+- Added Installed, Update, Downloaded, and Queued badges directly to catalogue cards, backed by local receipts and delivery history.
+- Added persistent browsing sessions covering search text, filters, source, sort, page, selected types, and catalogue scroll position.
+- Added keyboard and controller grid navigation: directional navigation, Enter/A to open, and Escape/B to dismiss the showcase.
+- Added a two-mod comparison table and related-mod recommendations ranked from listing type, creator, and shared tags rather than page position.
+- Added named saved searches and manually refreshed watchlists with new-result counters.
+- Added Compact, Standard, and Cinematic showcase sizes, hero fit/fill selection, previous/next controls, a counter, full-screen zoom, and fit reset.
+- Added independently adjustable dossier, description, and action text scales plus Comfortable, Compact, and Minimal information-density modes.
+- Expanded provider health into a capability dashboard covering catalog requests, stored authentication, Penumbra availability, and delivery status.
+- Added privacy-safe diagnostic report export to the configured Downloads directory; secrets, download URLs, and mod contents are excluded.
+
 ## 0.24.4 — Readable light-dismiss showcase
 
 - Restored the solid archive-themed background and illuminated border around the floating mod showcase so its dossier remains readable over image-heavy catalogue pages.
