@@ -134,12 +134,20 @@ public sealed class MainWindow : Window
             ImGui.EndCombo();
         }
         ImGui.TextColored(BibliognostTheme.Dim, "MOD TYPES");
+        var allTypes = selectedTypes.Count == ModTypes.Length;
+        if (ImGui.Checkbox("All", ref allTypes))
+        {
+            selectedTypes.Clear();
+            if (allTypes)
+                foreach (var type in ModTypes) selectedTypes.Add(type.Id);
+        }
+        ImGui.SameLine();
         for (var i = 0; i < ModTypes.Length; i++)
         {
             var type = ModTypes[i];
             var chosen = selectedTypes.Contains(type.Id);
             if (ImGui.Checkbox(type.Label, ref chosen)) { if (chosen) selectedTypes.Add(type.Id); else selectedTypes.Remove(type.Id); }
-            if (i == 9) ImGui.NewLine(); else if (i + 1 < ModTypes.Length) ImGui.SameLine();
+            if (i == 8) ImGui.NewLine(); else if (i + 1 < ModTypes.Length) ImGui.SameLine();
         }
         ImGui.NewLine();
         if (!loading && BibliognostTheme.AccentButton("apply-filters", "APPLY FILTERS", new Vector2(132, 29))) { latestReleases = false; highestVisitedPage = 1; GoToPage(1); }
