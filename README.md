@@ -2,7 +2,7 @@
 
 ![Bibliognost illuminated archive sigil](Assets/Branding/Bibliognost-Icon.png)
 
-Bibliognost is a Dalamud plugin for browsing Final Fantasy XIV mods from inside the game. It currently supports XIV Mod Archive, Heliosphere, and Nexus Mods, with provider-aware search and details, secure optional account connections, duplicate-source grouping, disk-backed preview caching, and guarded package delivery to Penumbra.
+Bibliognost is a Dalamud plugin for browsing Final Fantasy XIV mods from inside the game. It currently supports XIV Mod Archive, Heliosphere, and Nexus Mods, with provider-aware search and details, secure optional account connections, duplicate-source grouping, favorites and viewing history, disk-backed preview caching, provider diagnostics, and guarded package delivery to Penumbra.
 
 > **Private testing release:** Bibliognost is under active development. Provider websites can change without notice, and installing third-party mods always remains a player-authorized action.
 
@@ -39,7 +39,7 @@ Settings intentionally never repopulates plaintext credentials into editable fie
 - An unfiltered XMA request sends every current XMA content type explicitly. This includes gear, body, face, hair, reshade, other, minion, mount, furniture, skin, racial scaling, pose, VFX, animation, sound, Dalamud plugins, modding tools, and apps; XMA does not treat an omitted type list as equivalent to selecting everything.
 - Pagination keeps numbered page history, Previous/Next navigation, and a direct page-number field for long searches.
 - In All Sources mode, Bibliognost gathers the required page depth from every provider, merges and sorts the combined timeline, and only then slices the requested page. This prevents provider-local page numbers from masquerading as global chronology.
-- Card size is adjustable from 480–900 pixels and the catalog automatically reflows with the window. Existing installations migrate to the larger 640-pixel default.
+- Narrow, Balanced, and Showcase layout presets continuously reflow with the window, and card size can be fine-tuned from 260–900 pixels.
 - The details showcase uses an animated glow response, prominent title treatment, large hero artwork, selectable preview thumbnails, compact dossier metadata, and an optional expanding description panel.
 - Detail hero artwork reserves a small internal frame-safe inset so its luminous border and glow remain visible instead of being clipped by the scrollable drawer.
 - The main archive now has a crisp 48-pixel display-font wordmark, animated multicolor indexing spectrum, luminous frame, and compact subtitle inspired by Encore's presentation principles while retaining Bibliognost's own identity.
@@ -48,7 +48,7 @@ Settings intentionally never repopulates plaintext credentials into editable fie
 - Settings shares the main archive's animated spectrum masthead, dark grid background, luminous section bands, and display hierarchy for a consistent application-wide visual language.
 - The large Bibliognost wordmark can use any installed Windows TrueType/OpenType font selected in Settings, with an immediate live preview and a persistent safe fallback chain.
 - Charito is bundled unchanged as Bibliognost's default title font under the SIL Open Font License 1.1. Its copyright and complete license are included beside the font in `Assets/Fonts/Charito-OFL.txt`.
-- Recognized `.ttmp`, `.ttmp2`, `.pmp`, and `.zip` artifacts from XMA or Nexus are downloaded to the user's Downloads folder with progress, cancellation, collision-safe names, empty-file rejection, and a 4 GB safety ceiling, then passed to Penumbra through `Penumbra.InstallMod.V5`. The button itself is the explicit install action; Bibliognost never installs from passive browsing.
+- Recognized `.ttmp`, `.ttmp2`, and `.pmp` artifacts from XMA or Nexus are downloaded with progress, cancellation, collision-safe names, empty-file rejection, and a 4 GB ceiling. Ordinary ZIPs are inspected for a Penumbra `meta.json` or TexTools manifest before they can reach `Penumbra.InstallMod.V5`.
 - Install actions show a source/version/filename confirmation first. Bibliognost checks Penumbra's mod list and labels likely existing entries as updates, while preserving Penumbra as the final authority.
 - Settings offers a custom download folder, keep/remove-after-import behavior, and a persistent 30-entry success/failure history. Failed transfers retain their selected source so the action can be retried from the dossier.
 - Download location selection uses Dalamud's native folder-picker interface; players never need to type or edit a filesystem path. A reset button restores the standard Windows Downloads folder.

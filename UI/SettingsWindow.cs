@@ -28,12 +28,14 @@ public sealed class SettingsWindow : Window
 
     public override void Draw()
     {
+        ImGui.SetWindowFontScale(Math.Clamp(plugin.Configuration.UiScale, .85f, 1.40f));
         DrawBackdrop();
         MainWindow.DrawArchiveHeader(plugin, "CONNECTIONS · PRIVACY · DISPLAY", "settings-banner");
         DrawSectionTitle("PROVIDERS", "CONNECTED ARCHIVES");
         DrawProviderState(true, "HELIOSPHERE", "Public GraphQL catalog · no sign-in required");
         DrawProviderState(HasXmaSession, "XIV MOD ARCHIVE", HasXmaSession ? "Public catalog · account session saved" : "Public catalog · optional account connection");
         DrawProviderState(HasNexusKey, "NEXUS MODS", HasNexusKey ? "Final Fantasy XIV catalog · API key saved" : "Final Fantasy XIV catalog · API key required");
+        DrawProviderDiagnostics();
         DrawSectionTitle("XIV MOD ARCHIVE", "SECURE SESSION CONNECTION");
         ImGui.TextWrapped("XMA signs players in through Discord. XMA does not provide Bibliognost with a safe password or app-login API, so your password should never be typed into this plugin.");
         ImGui.Spacing();
@@ -115,6 +117,19 @@ public sealed class SettingsWindow : Window
         DrawCardFontPicker(CardFontRole.Type, "LISTING TYPE", plugin.Configuration.CardTypeFontName, plugin.Configuration.CardTypeFontPath, plugin.Configuration.CardTypeFontSize);
         DrawSectionTitle("INTERFACE THEME", "COLOR PALETTE");
         DrawThemePicker();
+        var uiScale = plugin.Configuration.UiScale * 100f;
+        ImGui.SetNextItemWidth(280);
+        if (ImGui.SliderFloat("Interface scale", ref uiScale, 85f, 140f, "%.0f%%", ImGuiSliderFlags.AlwaysClamp))
+        { plugin.Configuration.UiScale = uiScale / 100f; plugin.Configuration.Save(); }
+        var reducedMotion = plugin.Configuration.ReducedMotion;
+        if (ImGui.Checkbox("Reduce interface motion", ref reducedMotion))
+        { plugin.Configuration.ReducedMotion = reducedMotion; BibliognostTheme.ReducedMotion = reducedMotion; plugin.Configuration.Save(); }
+        DrawSectionTitle("UPDATE SCANNING", "REQUEST PACING");
+        var scanDelay = plugin.Configuration.UpdateScanDelayMs;
+        ImGui.SetNextItemWidth(280);
+        if (ImGui.SliderInt("Delay between update checks", ref scanDelay, 0, 1500, "%d ms", ImGuiSliderFlags.AlwaysClamp))
+        { plugin.Configuration.UpdateScanDelayMs = scanDelay; plugin.Configuration.Save(); }
+        ImGui.TextColored(BibliognostTheme.Dim, "A short delay is courteous to archive providers and recommended for large collections.");
         DrawSectionTitle("DOWNLOADS", "DELIVERY & HISTORY");
         var downloadDirectory = EffectiveDownloadDirectory();
         ImGui.TextColored(BibliognostTheme.Dim, "DOWNLOAD LOCATION");
@@ -324,6 +339,33 @@ public sealed class SettingsWindow : Window
         var color = saved ? new Vector4(.42f, .90f, .60f, 1f) : BibliognostTheme.Dim;
         ImGui.TextColored(color, saved ? $"●  {label} SAVED SECURELY" : $"○  {label} NOT SAVED");
         if (saved && ImGui.IsItemHovered()) ImGui.SetTooltip("The secret is encrypted for your current Windows user and automatically restored when Bibliognost starts.");
+    }
+
+    private void DrawProviderDiagnostics()
+    {
+        ImGui.Spacing();
+        ImGui.TextColored(BibliognostTheme.Gold, "PROVIDER HEALTH");
+        var diagnostics = plugin.Catalog.Diagnostics;
+        if (diagnostics.Count == 0) ImGui.TextColored(BibliognostTheme.Dim, "No provider requests have completed in this session.");
+        foreach (var item in diagnostics)
+        {
+            var healthy = item.Error is null;
+            ImGui.TextColored(healthy ? new Vector4(.42f, .90f, .60f, 1) : new Vector4(1f, .42f, .35f, 1), "●");
+            ImGui.SameLine(); ImGui.Text(item.DisplayName);
+            ImGui.SameLine(); ImGui.TextColored(BibliognostTheme.Dim, item.FromCache
+                ? $"{item.ResultCount} results · cached"
+                : $"{item.ResultCount} results · {item.Duration.TotalSeconds:F1}s · success {item.LastSuccess?.ToLocalTime():g}");
+            if (!healthy) ImGui.TextWrapped(item.Error);
+        }
+        if (BibliognostTheme.AccentButton("force-provider-refresh", "FORCE REFRESH", new Vector2(145, 29))) plugin.Main.ForceRefresh();
+        ImGui.SameLine();
+        if (BibliognostTheme.AccentButton("copy-diagnostics", "COPY REPORT", new Vector2(135, 29)))
+        {
+            var version = typeof(Plugin).Assembly.GetName().Version?.ToString(3) ?? "unknown";
+            var lines = diagnostics.Select(item => $"{item.DisplayName}: {(item.Error is null ? "OK" : "ERROR")} | results={item.ResultCount} | cache={item.FromCache} | duration={item.Duration.TotalSeconds:F1}s | lastSuccess={item.LastSuccess:u} | {item.Error}");
+            ImGui.SetClipboardText($"Bibliognost {version}{Environment.NewLine}{string.Join(Environment.NewLine, lines)}");
+        }
+        ImGui.TextColored(BibliognostTheme.Dim, "Reports exclude API keys, cookies, and download URLs.");
     }
 
     private static void DrawSectionTitle(string title, string subtitle)

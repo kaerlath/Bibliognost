@@ -5,11 +5,14 @@ namespace Bibliognost.Providers;
 public enum ProviderSelection { All, XivModArchive, Heliosphere, NexusMods }
 
 public sealed record SourceMatchCandidate(ModSummary Summary, float Confidence, string Explanation);
+public sealed record ProviderDiagnostic(string ProviderId, string DisplayName, DateTimeOffset? LastSuccess, DateTimeOffset LastAttempt, int ResultCount, TimeSpan Duration, bool FromCache, string? Error);
 
 public sealed class ModCatalog(IEnumerable<IModProvider> providers, Configuration configuration)
 {
     private readonly IReadOnlyDictionary<string, IModProvider> providers = providers.ToDictionary(p => p.Id, StringComparer.Ordinal);
     private readonly Dictionary<string, (DateTimeOffset Stored, ProviderResult<IReadOnlyList<ModSummary>> Result)> searchCache = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ProviderDiagnostic> diagnostics = new(StringComparer.Ordinal);
+    public IReadOnlyList<ProviderDiagnostic> Diagnostics { get { lock (diagnostics) return diagnostics.Values.OrderBy(item => item.DisplayName).ToArray(); } }
     public IReadOnlyList<SourceMatchCandidate> LastCandidates { get; private set; } = [];
     public string LastMatchExplanation { get; private set; } = string.Empty;
 
@@ -114,10 +117,29 @@ public sealed class ModCatalog(IEnumerable<IModProvider> providers, Configuratio
     {
         var key = string.Join('|', provider.Id, query.Page, query.Sort, query.Direction, query.SearchText, query.Name, query.Author, query.Gender, query.Races, query.Tags, query.Affects, query.AdultContent, query.DawntrailCompatibleOnly, query.PublishedTodayOnly, string.Join(',', query.Types));
         lock (searchCache)
-            if (searchCache.TryGetValue(key, out var cached) && DateTimeOffset.Now - cached.Stored < TimeSpan.FromMinutes(10)) return cached.Result;
+            if (searchCache.TryGetValue(key, out var cached) && DateTimeOffset.Now - cached.Stored < TimeSpan.FromMinutes(10))
+            {
+                RecordDiagnostic(provider, cached.Result, TimeSpan.Zero, true);
+                return cached.Result;
+            }
+        var started = DateTimeOffset.Now;
         var result = await provider.SearchAsync(query, cancellationToken);
+        RecordDiagnostic(provider, result, DateTimeOffset.Now - started, false);
         if (result.Success) lock (searchCache) searchCache[key] = (DateTimeOffset.Now, result);
         return result;
+    }
+
+    public void ClearSearchCache() { lock (searchCache) searchCache.Clear(); }
+
+    private void RecordDiagnostic(IModProvider provider, ProviderResult<IReadOnlyList<ModSummary>> result, TimeSpan duration, bool cached)
+    {
+        lock (diagnostics)
+        {
+            diagnostics.TryGetValue(provider.Id, out var previous);
+            diagnostics[provider.Id] = new ProviderDiagnostic(provider.Id, provider.DisplayName,
+                result.Success ? DateTimeOffset.Now : previous?.LastSuccess, DateTimeOffset.Now,
+                result.Value?.Count ?? 0, duration, cached, result.Success ? null : result.Error);
+        }
     }
 
     private async Task<IReadOnlyList<ModSummary>> FindCandidatesAsync(IModProvider provider, ModSummary summary, CancellationToken cancellationToken)

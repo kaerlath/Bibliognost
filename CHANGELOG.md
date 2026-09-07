@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.24.0 — Reliability, library, and accessibility
+
+- Added live provider-health diagnostics with response timing, result counts, cache state, last-success time, error reporting, a forced refresh, and a credential-safe clipboard report.
+- Cancels superseded searches so an older response cannot replace a newer query, while retaining the fast ten-minute result cache.
+- Added a standalone XMA parser regression harness and sanitized Similar Mods fixture.
+- Added persistent Favorites and a 50-entry Recently Viewed library directly to the catalogue toolbar.
+- Added full-size gallery previews with previous/next navigation.
+- Added configurable 85–140% interface scaling, reduced-motion behavior, and a High Contrast theme.
+- Added configurable pacing and a remembered completion time for manual installed-mod update scans.
+- Limits image transfers to four concurrent downloads and prunes previews older than 30 days or beyond a 512 MB cache budget.
+
 ## 0.23.14 — Responsive narrow grid
 
 - Added Narrow, Balanced, and Showcase responsive layout presets; each continuously reflows as the window changes size.

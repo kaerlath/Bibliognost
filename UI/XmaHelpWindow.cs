@@ -16,6 +16,7 @@ public sealed class XmaHelpWindow : Window
 
     public override void Draw()
     {
+        ImGui.SetWindowFontScale(Math.Clamp(plugin.Configuration.UiScale, .85f, 1.40f));
         DrawBackdrop();
         MainWindow.DrawArchiveHeader(plugin, "GUIDANCE · SECURITY · CONNECTION", "xma-help-banner");
         ImGui.TextColored(BibliognostTheme.GoldBright, "CONNECTING XIV MOD ARCHIVE");

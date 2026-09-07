@@ -13,8 +13,10 @@ internal static class BibliognostTheme
         new("Amethyst Nocturne", new(.68f, .43f, .91f, 1), new(.86f, .66f, 1f, 1), new(.95f, .92f, .98f, 1), new(.66f, .58f, .73f, 1), new(.052f, .032f, .071f, .98f), new(.18f, .08f, .24f, 1)),
         new("Verdant Aether", new(.28f, .76f, .58f, 1), new(.55f, 1f, .78f, 1), new(.90f, .97f, .94f, 1), new(.54f, .68f, .62f, 1), new(.025f, .060f, .052f, .98f), new(.05f, .19f, .14f, 1)),
         new("Crimson Manuscript", new(.86f, .32f, .37f, 1), new(1f, .58f, .61f, 1), new(.97f, .92f, .92f, 1), new(.69f, .57f, .59f, 1), new(.065f, .030f, .038f, .98f), new(.23f, .06f, .08f, 1)),
+        new("High Contrast", new(1f, .82f, .12f, 1), new(1f, 1f, .65f, 1), new(1f, 1f, 1f, 1), new(.78f, .82f, .88f, 1), new(.008f, .010f, .015f, 1), new(.16f, .16f, .04f, 1)),
     ];
     private static Palette current = Palettes[0];
+    internal static bool ReducedMotion { get; set; }
     public static Vector4 Gold => current.Accent;
     public static Vector4 GoldBright => current.Bright;
     public static Vector4 Text => current.Text;
@@ -25,6 +27,7 @@ internal static class BibliognostTheme
 
     public static float AnimateHover(string id, bool hovered)
     {
+        if (ReducedMotion) return hovered ? 1f : 0f;
         var current = Hover.GetValueOrDefault(id);
         var target = hovered ? 1f : 0f;
         current += (target - current) * Math.Clamp(ImGui.GetIO().DeltaTime * 12f, 0f, 1f);
@@ -64,7 +67,7 @@ internal static class BibliognostTheme
 
     public static void DrawGlowRect(ImDrawListPtr draw, Vector2 min, Vector2 max, float strength, string id = "glow")
     {
-        var pulse = .5f + .5f * MathF.Sin((float)ImGui.GetTime() * .75f + ImGui.GetID(id) % 13);
+        var pulse = ReducedMotion ? .5f : .5f + .5f * MathF.Sin((float)ImGui.GetTime() * .75f + ImGui.GetID(id) % 13);
         var alpha = (.18f + pulse * .14f) * strength;
         draw.AddRect(min, max, ImGui.GetColorU32(Gold with { W = alpha * .28f }), 6, ImDrawFlags.None, 7f);
         draw.AddRect(min, max, ImGui.GetColorU32(Gold with { W = alpha * .55f }), 6, ImDrawFlags.None, 3f);

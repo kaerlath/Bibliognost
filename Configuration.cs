@@ -26,6 +26,12 @@ public sealed class Configuration : IPluginConfiguration
     public float CardAuthorFontSize { get; set; } = 14f;
     public float CardTypeFontSize { get; set; } = 14f;
     public bool CardTitleBold { get; set; } = true;
+    public float UiScale { get; set; } = 1f;
+    public bool ReducedMotion { get; set; }
+    public int UpdateScanDelayMs { get; set; } = 200;
+    public DateTimeOffset? LastUpdateCheck { get; set; }
+    public List<ModSummary> FavoriteMods { get; set; } = [];
+    public List<ModSummary> RecentlyViewedMods { get; set; } = [];
     public List<string> ConfirmedSourceMatches { get; set; } = [];
     public List<string> RejectedSourceMatches { get; set; } = [];
     public string DownloadDirectory { get; set; } = string.Empty;

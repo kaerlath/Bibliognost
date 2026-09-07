@@ -28,9 +28,12 @@ public sealed class UpdatesWindow : Window, IDisposable
 
     public override void Draw()
     {
+        ImGui.SetWindowFontScale(Math.Clamp(plugin.Configuration.UiScale, .85f, 1.40f));
         MainWindow.DrawArchiveHeader(plugin, "OBSERVE · COMPARE · DECIDE", "updates-banner");
         ImGui.TextColored(BibliognostTheme.GoldBright, "MANUAL UPDATE CENTRE");
         ImGui.TextWrapped("Bibliognost never updates automatically. Scans compare metadata only; every download and installation still requires your approval.");
+        if (plugin.Configuration.LastUpdateCheck is { } checkedAt)
+            ImGui.TextColored(BibliognostTheme.Dim, $"Last completed scan: {checkedAt.ToLocalTime():g}");
         ImGui.Spacing();
         if (!busy && BibliognostTheme.AccentButton("quick-scan", "QUICK SCAN", new Vector2(145, 32))) _ = QuickScanAsync();
         ImGui.SameLine();
@@ -103,7 +106,10 @@ public sealed class UpdatesWindow : Window, IDisposable
                 var result = await plugin.Catalog.GetDetailsAsync(receipt.ProviderId, receipt.RemoteId, cancellation.Token);
                 if (!result.Success || result.Value is null) checks.Add(new(receipt, null, UpdateState.SourceUnavailable, result.Error ?? "The source did not respond."));
                 else checks.Add(Compare(receipt, result.Value, local));
+                if (plugin.Configuration.UpdateScanDelayMs > 0 && i + 1 < receipts.Length)
+                    await Task.Delay(plugin.Configuration.UpdateScanDelayMs, cancellation.Token);
             }
+            plugin.Configuration.LastUpdateCheck = DateTimeOffset.Now; plugin.Configuration.Save();
             progress = 1; status = receipts.Length == 0 ? "No linked mods yet. Use Discover Legacy Sources or install through Bibliognost." : $"Scan complete: {checks.Count(item => item.State == UpdateState.UpdateAvailable)} update(s) available.";
         }
         catch (OperationCanceledException) { status = "Update scan cancelled."; }

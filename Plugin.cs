@@ -49,6 +49,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         BibliognostTheme.Apply(Configuration.ThemeName);
+        BibliognostTheme.ReducedMotion = Configuration.ReducedMotion;
         TitleFonts = new TitleFontManager(Configuration);
         CardFonts = new CardFontManager(Configuration);
         Delivery = new ModDeliveryService(Configuration);
