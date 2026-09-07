@@ -183,9 +183,9 @@ public sealed class MainWindow : Window
 
     private void DrawCatalog(float available)
     {
-        var requestedWidth = Math.Clamp(plugin.Configuration.CardWidth, 480, 900);
+        var requestedWidth = Math.Clamp(plugin.Configuration.CardWidth, 260, 900);
         var columns = Math.Max(1, (int)((available + 10) / (requestedWidth + 10)));
-        var cardWidth = Math.Max(420, (available - (columns - 1) * 10) / columns);
+        var cardWidth = Math.Max(230, (available - (columns - 1) * 10) / columns);
         if (mods.Count == 0 && !loading)
         {
             ImGui.Dummy(new Vector2(1, 80));
@@ -215,7 +215,9 @@ public sealed class MainWindow : Window
     {
         ImGui.PushID(mod.ProviderId + ":" + mod.RemoteId);
         var start = ImGui.GetCursorScreenPos();
-        var imageHeight = plugin.Configuration.CompactCards ? Math.Clamp(width * .48f, 220f, 400f) : Math.Clamp(width * .68f, 320f, 570f);
+        var imageHeight = plugin.Configuration.CompactCards
+            ? Math.Clamp(width * .48f, 130f, 400f)
+            : Math.Clamp(width * .68f, 170f, 570f);
         var metadataHeight = plugin.Configuration.CardTitleFontSize + plugin.Configuration.CardAuthorFontSize +
             (plugin.Configuration.CompactCards ? 0 : plugin.Configuration.CardTypeFontSize) + (plugin.Configuration.CompactCards ? 44 : 58);
         var size = new Vector2(width, imageHeight + metadataHeight);

@@ -78,14 +78,32 @@ public sealed class SettingsWindow : Window
         }
         ImGui.TextWrapped(nexusStatus);
         DrawSectionTitle("CATALOG LAYOUT", "PRESENTATION");
+        ImGui.TextColored(BibliognostTheme.Gold, "RESPONSIVE LAYOUT PRESET");
+        if (BibliognostTheme.AccentButton("narrow-grid", "NARROW", new Vector2(105, 28)))
+        {
+            plugin.Configuration.CardWidth = 300f;
+            plugin.Configuration.Save();
+        }
+        ImGui.SameLine();
+        if (BibliognostTheme.AccentButton("balanced-grid", "BALANCED", new Vector2(115, 28)))
+        {
+            plugin.Configuration.CardWidth = 430f;
+            plugin.Configuration.Save();
+        }
+        ImGui.SameLine();
+        if (BibliognostTheme.AccentButton("showcase-grid", "SHOWCASE", new Vector2(115, 28)))
+        {
+            plugin.Configuration.CardWidth = 640f;
+            plugin.Configuration.Save();
+        }
+        ImGui.TextColored(BibliognostTheme.Dim, "Each preset is a preferred card width—not a fixed column count. The grid continuously conforms to the window.");
         var cardWidth = plugin.Configuration.CardWidth;
         ImGui.SetNextItemWidth(280);
-        if (ImGui.SliderFloat("Card size", ref cardWidth, 480, 900, "%.0f px", ImGuiSliderFlags.AlwaysClamp))
+        if (ImGui.SliderFloat("Fine-tune card size", ref cardWidth, 260, 900, "%.0f px", ImGuiSliderFlags.AlwaysClamp))
         {
             plugin.Configuration.CardWidth = cardWidth;
             plugin.Configuration.Save();
         }
-        ImGui.TextColored(BibliognostTheme.Dim, "The grid automatically reflows as the window or cards change size.");
         var compactCards = plugin.Configuration.CompactCards;
         if (ImGui.Checkbox("Compact card layout", ref compactCards)) { plugin.Configuration.CompactCards = compactCards; plugin.Configuration.Save(); }
         DrawSectionTitle("CATALOG TYPOGRAPHY", "CARD READABILITY");

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.23.14 — Responsive narrow grid
+
+- Added Narrow, Balanced, and Showcase responsive layout presets; each continuously reflows as the window changes size.
+- Extended the card-size control down to 260 pixels and made preview heights scale safely with narrow cards.
+- Preserved title, author, and listing-type metadata in the responsive small-card layout.
+
 ## 0.23.13 — Accurate XMA galleries
 
 - Excludes XMA's Similar Mods recommendation cards from the selected mod's preview gallery.
