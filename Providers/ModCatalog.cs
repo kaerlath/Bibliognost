@@ -192,7 +192,12 @@ public sealed class ModCatalog(IEnumerable<IModProvider> providers, Configuratio
     {
         static string N(string value) => new(value.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
         var author = N(left.Author) == N(right.Author) ? "same creator" : "compatible creator name";
-        return $"{score:P0} confidence · {author} · {CanonicalTitle(left.Name).Intersect(CanonicalTitle(right.Name)).Count()} shared title terms";
+        var signals = new List<string> { author, $"{CanonicalTitle(left.Name).Intersect(CanonicalTitle(right.Name)).Count()} shared title terms" };
+        if (PreviewFingerprint(left.ThumbnailUrl) is { Length: > 0 } fingerprint && fingerprint == PreviewFingerprint(right.ThumbnailUrl)) signals.Add("matching preview fingerprint");
+        if (left.ModType.Length > 0 && left.ModType.Equals(right.ModType, StringComparison.OrdinalIgnoreCase)) signals.Add("same listing type");
+        var sharedTags = left.Tags.Intersect(right.Tags, StringComparer.OrdinalIgnoreCase).Count();
+        if (sharedTags > 0) signals.Add($"{sharedTags} shared tags");
+        return $"{score:P0} confidence · {string.Join(" · ", signals)}";
     }
 
     private static float IdentityConfidence(ModSummary left, ModSummary right)
@@ -205,9 +210,21 @@ public sealed class ModCatalog(IEnumerable<IModProvider> providers, Configuratio
         var intersection = leftName.Intersect(rightName, StringComparer.Ordinal).Count();
         var union = leftName.Union(rightName, StringComparer.Ordinal).Count();
         var titleScore = union == 0 ? 0 : intersection / (float)union;
-        if (titleScore < .50f) return 0;
+        var previewMatches = PreviewFingerprint(left.ThumbnailUrl) is { Length: > 0 } preview && preview == PreviewFingerprint(right.ThumbnailUrl);
+        if (titleScore < (previewMatches ? .35f : .50f)) return 0;
         var authorScore = authorMatches ? 1f : leftAuthor.Length == 0 || rightAuthor.Length == 0 ? .35f : 0f;
-        return titleScore * .55f + authorScore * .45f;
+        var typeScore = left.ModType.Length > 0 && left.ModType.Equals(right.ModType, StringComparison.OrdinalIgnoreCase) ? 1f : 0f;
+        var tagUnion = left.Tags.Union(right.Tags, StringComparer.OrdinalIgnoreCase).Count();
+        var tagScore = tagUnion == 0 ? 0f : left.Tags.Intersect(right.Tags, StringComparer.OrdinalIgnoreCase).Count() / (float)tagUnion;
+        return titleScore * .48f + authorScore * .36f + Math.Max(typeScore, tagScore) * .08f + (previewMatches ? .08f : 0f);
+    }
+
+    private static string PreviewFingerprint(string? url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return string.Empty;
+        var name = Path.GetFileNameWithoutExtension(uri.LocalPath).ToLowerInvariant();
+        if (name.Length < 8 || name is "image" or "preview" or "thumbnail" or "noimage") return string.Empty;
+        return new string(name.Where(char.IsLetterOrDigit).ToArray());
     }
 
     private static HashSet<string> CanonicalTitle(string value)

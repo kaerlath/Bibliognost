@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.24.1 — Personal collections and stronger matching
+
+- Added a dedicated in-game Library for Favorites, Recently Viewed, and user-created named collections.
+- Collections can be created, deleted, populated from the active mod dossier, browsed, reopened, and edited without downloading anything.
+- Strengthened cross-source confidence with listing-type agreement, shared tags, and stable preview-file fingerprints.
+- Match explanations now expose the additional signals, while supplemental fingerprints remain unable to force an automatic merge on their own.
+
 ## 0.24.0 — Reliability, library, and accessibility
 
 - Added live provider-health diagnostics with response timing, result counts, cache state, last-success time, error reporting, a forced refresh, and a credential-safe clipboard report.

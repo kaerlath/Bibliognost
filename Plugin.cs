@@ -38,6 +38,7 @@ public sealed class Plugin : IDalamudPlugin
     internal SettingsWindow Settings { get; }
     internal XmaHelpWindow Help { get; }
     internal UpdatesWindow Updates { get; }
+    internal LibraryWindow Library { get; }
     internal TitleFontManager TitleFonts { get; }
     internal CardFontManager CardFonts { get; }
     internal ModDeliveryService Delivery { get; }
@@ -70,7 +71,8 @@ public sealed class Plugin : IDalamudPlugin
         Settings = new SettingsWindow(this);
         Help = new XmaHelpWindow(this);
         Updates = new UpdatesWindow(this);
-        Windows.AddWindow(Main); Windows.AddWindow(Settings); Windows.AddWindow(Help); Windows.AddWindow(Updates);
+        Library = new LibraryWindow(this);
+        Windows.AddWindow(Main); Windows.AddWindow(Settings); Windows.AddWindow(Help); Windows.AddWindow(Updates); Windows.AddWindow(Library);
         CommandManager.AddHandler(Command, new CommandInfo((_, _) => Main.Toggle()) { HelpMessage = "Open Bibliognost." });
         PluginInterface.UiBuilder.Draw += Windows.Draw;
         PluginInterface.UiBuilder.OpenMainUi += Main.Toggle;

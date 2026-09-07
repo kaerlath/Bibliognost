@@ -41,6 +41,7 @@ Settings intentionally never repopulates plaintext credentials into editable fie
 - In All Sources mode, Bibliognost gathers the required page depth from every provider, merges and sorts the combined timeline, and only then slices the requested page. This prevents provider-local page numbers from masquerading as global chronology.
 - Narrow, Balanced, and Showcase layout presets continuously reflow with the window, and card size can be fine-tuned from 260–900 pixels.
 - The details showcase uses an animated glow response, prominent title treatment, large hero artwork, selectable preview thumbnails, compact dossier metadata, and an optional expanding description panel.
+- The personal Library stores Favorites, the 50 most recently viewed entries, and named user collections locally. Saved entries can be reopened for fresh provider details and never trigger a download merely by being collected.
 - Detail hero artwork reserves a small internal frame-safe inset so its luminous border and glow remain visible instead of being clipped by the scrollable drawer.
 - The main archive now has a crisp 48-pixel display-font wordmark, animated multicolor indexing spectrum, luminous frame, and compact subtitle inspired by Encore's presentation principles while retaining Bibliognost's own identity.
 - Filter types are intentionally split across two rows; dossier tags wrap to additional rows; and duplicate entries list every known provider inline under **Sources**.
@@ -62,6 +63,7 @@ Settings intentionally never repopulates plaintext credentials into editable fie
 - Cross-provider identity normalizes common title variations such as `M`/`Male`, `F`/`Female`, `Miqo`/`Miqo'te`, punctuation, and race plurals. Targeted lookups use distinctive title words rather than requiring one provider's complete title to appear verbatim on another.
 - Alternate-source discovery independently searches by distinctive title and by creator across up to three provider result pages, then uses a weighted title/author confidence score. Low-confidence candidates stay as separate entries rather than being silently combined.
 - Match confidence and shared signals are visible in the dossier. Borderline candidates can be marked **Same Mod** or **Not the Same**, and Bibliognost remembers both decisions locally.
+- Cross-source suggestions can also use matching listing types, overlapping tags, and stable preview-file fingerprints. These supporting signals are explained to the player and cannot independently force an automatic merge.
 - The catalogue includes direct Newest, Recently Updated, Popular, and Today's Releases views plus an optional compact card presentation.
 - The manual Updates workspace records provider receipts after successful Bibliognost installs. Quick Scan compares linked Penumbra mods directly against current provider metadata without downloading anything; semantic versions are ordered when possible and ambiguous version/date changes are flagged for review.
 - Legacy Discovery is an explicit, cancellable slow scan for older Penumbra entries without source receipts. Suggested provider matches require player confirmation before they become linked.

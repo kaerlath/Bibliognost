@@ -32,6 +32,7 @@ public sealed class Configuration : IPluginConfiguration
     public DateTimeOffset? LastUpdateCheck { get; set; }
     public List<ModSummary> FavoriteMods { get; set; } = [];
     public List<ModSummary> RecentlyViewedMods { get; set; } = [];
+    public List<ModCollection> ModCollections { get; set; } = [];
     public List<string> ConfirmedSourceMatches { get; set; } = [];
     public List<string> RejectedSourceMatches { get; set; } = [];
     public string DownloadDirectory { get; set; } = string.Empty;

@@ -104,6 +104,8 @@ public sealed class MainWindow : Window
         if (BibliognostTheme.AccentButton("favorites", "FAVORITES", new Vector2(110, 27))) ShowLibrary(1);
         ImGui.SameLine();
         if (BibliognostTheme.AccentButton("recently-viewed", "VIEWED", new Vector2(92, 27))) ShowLibrary(2);
+        ImGui.SameLine();
+        if (BibliognostTheme.AccentButton("collections", "COLLECTIONS", new Vector2(125, 27))) plugin.Library.ShowFor();
         if (latestReleases) { ImGui.SameLine(); ImGui.TextColored(BibliognostTheme.GoldBright, "TODAY · ALL SOURCES"); }
         if (selectedTypes.Count > 0 || gender > 0 || name.Length > 0 || author.Length > 0 || races.Length > 0 || tags.Length > 0 || affects.Length > 0)
         {
@@ -345,6 +347,8 @@ public sealed class MainWindow : Window
             else plugin.Configuration.FavoriteMods.Insert(0, currentDetails.Summary);
             plugin.Configuration.Save();
         }
+        ImGui.SameLine();
+        if (BibliognostTheme.AccentButton("collect-mod", "ADD TO COLLECTION", new Vector2(175, 28))) plugin.Library.ShowFor(currentDetails.Summary);
         ImGui.Spacing();
         var gallery = currentDetails.ImageUrls.Count > 0 ? currentDetails.ImageUrls : currentDetails.Summary.ThumbnailUrl is null ? [] : [currentDetails.Summary.ThumbnailUrl];
         selectedImageIndex = Math.Clamp(selectedImageIndex, 0, Math.Max(0, gallery.Count - 1));

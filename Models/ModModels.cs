@@ -74,3 +74,9 @@ public sealed class InstalledModReceipt
     public DateTimeOffset InstalledAt { get; set; }
     public string IgnoredVersion { get; set; } = string.Empty;
 }
+
+public sealed class ModCollection
+{
+    public string Name { get; set; } = string.Empty;
+    public List<ModSummary> Mods { get; set; } = [];
+}
