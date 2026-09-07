@@ -52,7 +52,10 @@ internal static partial class XmaParser
         var title = Clean(doc.DocumentNode.SelectSingleNode("//h1|//h2[contains(@class,'mod-title')]")?.InnerText);
         var tags = doc.DocumentNode.SelectNodes("//div[contains(@class,'mod-meta-block')]//a[contains(@href,'tags=')]")
             ?.Select(n => Clean(n.InnerText)).Where(s => s.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToArray() ?? [];
-        var images = doc.DocumentNode.SelectNodes("//img[contains(@class,'mod') or contains(@class,'preview') or contains(@class,'carousel')]")
+        // Similar-mod cards reuse XMA's "mod" image naming, so a document-wide class
+        // match accidentally attached recommendation thumbnails to the selected mod.
+        // Gallery media must not live inside another mod card/link or below Similar Mods.
+        var images = doc.DocumentNode.SelectNodes("//img[(contains(@class,'mod') or contains(@class,'preview') or contains(@class,'carousel')) and not(ancestor::a[contains(@href,'/modid/')]) and not(ancestor::*[contains(concat(' ',normalize-space(@class),' '),' mod-card ')]) and not(preceding::*[normalize-space(.)='Similar Mods'])]")
             ?.Select(n => Absolute(string.IsNullOrWhiteSpace(n.GetAttributeValue("data-src", string.Empty)) ? n.GetAttributeValue("src", string.Empty) : n.GetAttributeValue("data-src", string.Empty)))
             .Where(s => s is not null).Cast<string>().Distinct().ToArray() ?? [];
         var descriptionNode = doc.DocumentNode.SelectSingleNode("//*[@id='info']")

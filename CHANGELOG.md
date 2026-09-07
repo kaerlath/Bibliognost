@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.13 — Accurate XMA galleries
+
+- Excludes XMA's Similar Mods recommendation cards from the selected mod's preview gallery.
+- Gallery extraction now rejects images nested in links or cards belonging to other mod IDs.
+
 ## 0.23.12 — Catalogue typography, themes, and safeguards
 
 - Added independent Windows font selectors and size controls for card titles, authors, and listing types, with safe Dalamud-font fallback.
