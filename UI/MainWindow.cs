@@ -54,7 +54,13 @@ public sealed class MainWindow : Window
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(720, 520), MaximumSize = new Vector2(4096, 4096) };
     }
 
-    public override void OnOpen() { if (mods.Count == 0 && !loading) _ = SearchAsync(); }
+    public override void OnOpen()
+    {
+        // Closing a Dalamud window only hides it, so the previous in-memory results remain.
+        // Always refresh the active view when Bibliognost is shown again while preserving
+        // the user's source, filters, sort, and current page.
+        if (!loading) _ = SearchAsync();
+    }
 
     public override void Draw()
     {

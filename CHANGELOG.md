@@ -7,6 +7,7 @@
 - Added Archive Gold, Moonlit Azure, Amethyst Nocturne, Verdant Aether, and Crimson Manuscript interface themes.
 - Applied the selected palette throughout cards, controls, borders, headings, backgrounds, and glow effects.
 - Ordinary ZIP downloads are now inspected for a real Penumbra or TexTools manifest before installation; incompatible archives remain safely in Downloads with a clear explanation.
+- Reopening Bibliognost now refreshes the active catalogue view instead of displaying a stale in-memory result set.
 
 ## 0.23.10 — Reliable Heliosphere routing
 
