@@ -21,6 +21,7 @@ public sealed class SettingsWindow : Window
     private bool busy;
     private string diagnosticExportStatus = string.Empty;
     private readonly FileDialogManager dialogs = new();
+    private readonly Dictionary<string, bool> sectionOpen = new(StringComparer.OrdinalIgnoreCase) { ["PROVIDERS"] = true };
 
     public SettingsWindow(Plugin plugin) : base("Bibliognost Settings###BibliognostSettings")
     {
@@ -453,13 +454,30 @@ public sealed class SettingsWindow : Window
         catch (Exception ex) { diagnosticExportStatus = $"Could not export the report: {ex.Message}"; }
     }
 
-    private static bool BeginSettingsSection(string title, string description, bool openByDefault = false)
+    private bool BeginSettingsSection(string title, string description, bool openByDefault = false)
     {
         ImGui.Spacing();
-        var flags = ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.FramePadding;
-        if (openByDefault) flags |= ImGuiTreeNodeFlags.DefaultOpen;
-        var open = ImGui.CollapsingHeader($"{title}###settings-{title}", flags);
-        if (ImGui.IsItemHovered()) ImGui.SetTooltip(description);
+        if (!sectionOpen.TryGetValue(title, out var open)) open = openByDefault;
+        var min = ImGui.GetCursorScreenPos();
+        var width = ImGui.GetContentRegionAvail().X;
+        const float height = 38f;
+        ImGui.InvisibleButton($"##settings-{title}", new Vector2(width, height));
+        var hovered = ImGui.IsItemHovered();
+        if (ImGui.IsItemClicked()) sectionOpen[title] = open = !open;
+        var max = min + new Vector2(width, height);
+        var draw = ImGui.GetWindowDrawList();
+        var strength = hovered ? .34f : open ? .25f : .16f;
+        var left = Vector4.Lerp(BibliognostTheme.Surface, BibliognostTheme.Gold, strength);
+        var right = Vector4.Lerp(BibliognostTheme.Surface, BibliognostTheme.GoldBright, hovered ? .12f : .055f);
+        draw.AddRectFilledMultiColor(min, max, ImGui.GetColorU32(left), ImGui.GetColorU32(right), ImGui.GetColorU32(BibliognostTheme.Surface), ImGui.GetColorU32(Vector4.Lerp(BibliognostTheme.Surface, BibliognostTheme.Gold, strength * .55f)));
+        draw.AddRect(min, max, ImGui.GetColorU32(open || hovered ? BibliognostTheme.GoldBright : BibliognostTheme.Gold), 4, ImDrawFlags.None, open ? 1.7f : 1f);
+        var arrowCenter = min + new Vector2(17, height * .5f);
+        if (open) draw.AddTriangleFilled(arrowCenter + new Vector2(-5, -3), arrowCenter + new Vector2(5, -3), arrowCenter + new Vector2(0, 4), ImGui.GetColorU32(BibliognostTheme.GoldBright));
+        else draw.AddTriangleFilled(arrowCenter + new Vector2(-3, -5), arrowCenter + new Vector2(-3, 5), arrowCenter + new Vector2(4, 0), ImGui.GetColorU32(BibliognostTheme.GoldBright));
+        draw.AddText(min + new Vector2(31, 9), ImGui.GetColorU32(BibliognostTheme.Text), title);
+        var descriptionSize = ImGui.CalcTextSize(description);
+        if (descriptionSize.X < width * .58f) draw.AddText(new Vector2(max.X - descriptionSize.X - 12, min.Y + 10), ImGui.GetColorU32(BibliognostTheme.Dim), description);
+        if (hovered) ImGui.SetTooltip(open ? $"Collapse {title}" : $"Expand {title}: {description}");
         if (open)
         {
             ImGui.TextColored(BibliognostTheme.Dim, description);
@@ -472,7 +490,11 @@ public sealed class SettingsWindow : Window
     {
         var flags = ImGuiTreeNodeFlags.SpanAvailWidth;
         if (openByDefault) flags |= ImGuiTreeNodeFlags.DefaultOpen;
+        ImGui.PushStyleColor(ImGuiCol.Header, Vector4.Lerp(BibliognostTheme.Surface, BibliognostTheme.Gold, .16f));
+        ImGui.PushStyleColor(ImGuiCol.HeaderHovered, Vector4.Lerp(BibliognostTheme.Surface, BibliognostTheme.GoldBright, .28f));
+        ImGui.PushStyleColor(ImGuiCol.HeaderActive, Vector4.Lerp(BibliognostTheme.Surface, BibliognostTheme.Gold, .36f));
         var open = ImGui.TreeNodeEx($"{title}###typography-{title}", flags);
+        ImGui.PopStyleColor(3);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip(description);
         if (open) ImGui.TextColored(BibliognostTheme.Dim, description);
         return open;

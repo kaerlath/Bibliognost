@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.25.3 — Themed settings disclosures
+
+- Replaced the stock grey settings disclosure bars with custom four-corner gradients derived from the active Bibliognost color palette.
+- Added theme-aware borders, arrows, open-state emphasis, and hover highlights to every main Settings category.
+- Styled the nested Title Typography and Catalog Typography disclosures with coordinated palette colors.
+- Ensured switching themes immediately recolors the complete Settings navigation hierarchy.
+
 ## 0.25.2 — Organized settings navigation
 
 - Replaced the ever-growing settings page with collapsible sections for Providers, XIV Mod Archive, Nexus Mods, Catalog Layout, Typography, Interface Color Theme, Update Scanning, Downloads, and Content Visibility.

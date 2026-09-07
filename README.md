@@ -39,6 +39,7 @@ Settings intentionally never repopulates plaintext credentials into editable fie
 - Selecting a mod opens a centered showcase overlay with a large title, hero gallery, dossier, source choices, and installation actions without resizing or reflowing the catalogue behind it.
 - Library Tools provides a validated installation queue, structured local history, and saved-search watchlists. Provider credentials, capability health, request diagnostics, refresh controls, and privacy-safe report export are consolidated in Settings.
 - Settings uses collapsible, task-oriented sections; all wordmark, catalog, dossier, description, and action typography controls are grouped beneath a single nested Typography area.
+- Settings disclosure headers use gradients, borders, arrows, and interaction highlights generated from the currently selected interface theme.
 - Catalogue cards identify installed, update-ready, downloaded, and queued mods; browsing source, filters, page, and scroll position persist between sessions.
 - Directional keyboard/controller navigation, related-mod ranking, side-by-side comparison, showcase size presets, image zoom/navigation, text scaling, and density presets are available without enabling automatic downloads or updates.
 - An unfiltered XMA request sends every current XMA content type explicitly. This includes gear, body, face, hair, reshade, other, minion, mount, furniture, skin, racial scaling, pose, VFX, animation, sound, Dalamud plugins, modding tools, and apps; XMA does not treat an omitted type list as equivalent to selecting everything.
