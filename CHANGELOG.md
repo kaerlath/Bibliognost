@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.24.3 — Light-dismiss floating showcase
+
+- Changed the mod showcase from a boxed modal into a borderless floating presentation over the catalogue.
+- Removed the dedicated Close button and dimmed modal layer; clicking anywhere outside the showcase now dismisses it and returns directly to the unchanged listings.
+- Retained the prominent title, large hero image, scrolling dossier, and all library and installation actions.
+
 ## 0.24.2 — Mod showcase overlay
 
 - Replaced the width-changing side panel with a centered, dimmed showcase overlay, so opening a mod no longer reflows or moves the catalogue behind it.

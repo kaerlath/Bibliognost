@@ -198,16 +198,17 @@ public sealed class MainWindow : Window
             Math.Clamp(hostSize.Y * .88f, Math.Min(460f, hostSize.Y - 24f), 1080f));
         ImGui.SetNextWindowPos(hostPos + hostSize * .5f, ImGuiCond.Always, new Vector2(.5f));
         ImGui.SetNextWindowSize(overlaySize, ImGuiCond.Always);
-        ImGui.PushStyleColor(ImGuiCol.ModalWindowDimBg, new Vector4(.003f, .006f, .012f, .82f));
-        ImGui.PushStyleColor(ImGuiCol.PopupBg, BibliognostTheme.Surface);
-        var open = true;
-        if (ImGui.BeginPopupModal(popupId, ref open, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoCollapse))
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
+        ImGui.PushStyleColor(ImGuiCol.PopupBg, Vector4.Zero);
+        if (ImGui.BeginPopup(popupId, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoBackground))
         {
             DrawDrawer(ImGui.GetContentRegionAvail().X);
             ImGui.EndPopup();
         }
-        ImGui.PopStyleColor(2);
-        if (!open) details = null;
+        ImGui.PopStyleColor();
+        ImGui.PopStyleVar(2);
+        if (!ImGui.IsPopupOpen(popupId)) details = null;
     }
 
     private void DrawCatalog(float available)
@@ -352,21 +353,11 @@ public sealed class MainWindow : Window
         // Collapsing the description must never collapse the rest of the dossier.
         // Keep the showcase at the popup height and let its content child scroll.
         var panelHeight = availableHeight;
+        ImGui.PushStyleColor(ImGuiCol.ChildBg, Vector4.Zero);
         ImGui.BeginChild("details", new Vector2(panelWidth, panelHeight), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
         selectionFlash = Math.Max(0, selectionFlash - ImGui.GetIO().DeltaTime * 1.8f);
-        BibliognostTheme.DrawGlowFrame("details-frame", true);
-        ImGui.SetCursorPos(new Vector2(16, 16));
-        ImGui.BeginChild("details-content", new Vector2(-16, -16), false);
-        ImGui.SetCursorPosX(Math.Max(ImGui.GetCursorPosX(), ImGui.GetWindowContentRegionMax().X - 78));
-        if (BibliognostTheme.AccentButton("close-details", "CLOSE", new Vector2(78, 27)))
-        {
-            details = null;
-            ImGui.CloseCurrentPopup();
-            ImGui.EndChild();
-            ImGui.EndChild();
-            return;
-        }
-        ImGui.Spacing();
+        ImGui.SetCursorPos(new Vector2(10, 10));
+        ImGui.BeginChild("details-content", new Vector2(-10, -10), false);
         DrawDetailsHeader(currentDetails.Summary, selectionFlash);
         var favorite = plugin.Configuration.FavoriteMods.Any(item => ModKey(item) == ModKey(currentDetails.Summary));
         if (BibliognostTheme.AccentButton("favorite-mod", favorite ? "★  FAVORITED" : "☆  ADD FAVORITE", new Vector2(145, 28)))
@@ -437,6 +428,7 @@ public sealed class MainWindow : Window
         ImGui.Dummy(new Vector2(1, 14));
         ImGui.EndChild();
         ImGui.EndChild();
+        ImGui.PopStyleColor();
     }
 
     private void DrawSourceIdentityReview(ModDetails currentDetails)
