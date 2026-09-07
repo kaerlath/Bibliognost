@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.23.11 — Catalogue typography and themes
+## 0.23.12 — Catalogue typography, themes, and safeguards
 
 - Added independent Windows font selectors and size controls for card titles, authors, and listing types, with safe Dalamud-font fallback.
 - Added optional stronger title emphasis and dynamic card spacing for larger typography.
