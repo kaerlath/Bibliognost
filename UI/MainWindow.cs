@@ -784,7 +784,14 @@ public sealed class MainWindow : Window
         }, (ProviderSelection)providerSelection, token);
         if (token.IsCancellationRequested) return;
         mods.Clear();
-        if (result.Success && result.Value is not null) { mods.AddRange(result.Value.Take(plugin.Configuration.ResultsPerPage)); status = latestReleases ? $"{mods.Count} releases published today across connected sources" + (result.Error is null ? "." : $". One source reported: {result.Error}") : $"{mods.Count} entries found" + (result.Error is null ? "." : $". One source reported: {result.Error}"); }
+        if (result.Success && result.Value is not null)
+        {
+            mods.AddRange(result.Value.Take(plugin.Configuration.ResultsPerPage));
+            var count = result.TotalCount is { } total
+                ? providerSelection == (int)ProviderSelection.All ? $"{mods.Count} shown · {total:N0} provider matches" : $"{mods.Count} shown · {total:N0} total matches"
+                : $"{mods.Count} shown · total unavailable";
+            status = latestReleases ? $"{count} published today" + (result.Error is null ? "." : $". One source reported: {result.Error}") : count + (result.Error is null ? "." : $". One source reported: {result.Error}");
+        }
         else status = result.Error ?? "The archive could not be read.";
         loading = false;
     }

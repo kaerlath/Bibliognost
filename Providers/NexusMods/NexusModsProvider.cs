@@ -32,7 +32,8 @@ public sealed partial class NexusModsProvider(NexusModsClient client) : IModProv
                     .GroupBy(m => m.RemoteId).Select(g => g.First()).Where(m => Matches(m, query));
                 if (query.PublishedTodayOnly) mods = mods.Where(m => m.PublishedAt?.ToLocalTime().Date == DateTimeOffset.Now.Date);
                 mods = query.Sort switch { ModSort.Name => mods.OrderBy(m => m.Name), _ => mods.OrderByDescending(m => m.UpdatedAt) };
-                return ProviderResult<IReadOnlyList<ModSummary>>.Ok(mods.ToArray());
+                var page = mods.ToArray();
+                return ProviderResult<IReadOnlyList<ModSummary>>.Ok(page, page.Length);
             }
             finally { foreach (var document in documents) document.Dispose(); }
         }

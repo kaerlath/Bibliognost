@@ -8,6 +8,12 @@ namespace Bibliognost.Providers.XivModArchive;
 
 internal static partial class XmaParser
 {
+    public static int? ParseSearchTotal(string html)
+    {
+        var match = ResultsTotalRegex().Match(WebUtility.HtmlDecode(html));
+        return match.Success && int.TryParse(match.Groups[1].Value.Replace(",", string.Empty), out var total) ? total : null;
+    }
+
     public static IReadOnlyList<ModSummary> ParseSearch(string html)
     {
         var doc = Load(html);
@@ -125,4 +131,5 @@ internal static partial class XmaParser
         return match.Success && long.TryParse(match.Groups[1].Value.Replace(",", ""), out var value) ? value : null;
     }
     [GeneratedRegex(@"/modid/(\d+)", RegexOptions.IgnoreCase)] private static partial Regex ModIdRegex();
+    [GeneratedRegex(@"([\d,]+)\s+Results\s+over", RegexOptions.IgnoreCase)] private static partial Regex ResultsTotalRegex();
 }

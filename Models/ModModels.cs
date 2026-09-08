@@ -55,9 +55,9 @@ public sealed record ModSearchQuery
 public enum ModSort { Newest = 0, Updated = 1, Downloads = 2, Views = 3, Name = 4, Relevance = 5 }
 public enum SortDirection { Ascending, Descending }
 
-public sealed record ProviderResult<T>(bool Success, T? Value, string? Error)
+public sealed record ProviderResult<T>(bool Success, T? Value, string? Error, int? TotalCount = null)
 {
-    public static ProviderResult<T> Ok(T value) => new(true, value, null);
+    public static ProviderResult<T> Ok(T value, int? totalCount = null) => new(true, value, null, totalCount);
     public static ProviderResult<T> Fail(string error) => new(false, default, error);
 }
 

@@ -7,6 +7,9 @@ var details = XmaParser.ParseDetails(html, fallback) ?? throw new Exception("Det
 if (details.ImageUrls.Count != 1 || !details.ImageUrls[0].EndsWith("selected.jpg", StringComparison.Ordinal))
     throw new Exception($"Expected only selected.jpg, received: {string.Join(", ", details.ImageUrls)}");
 Console.WriteLine("XMA gallery regression passed.");
+var total = XmaParser.ParseSearchTotal("<code>92,776 Results over 6,186 Pages.</code>");
+if (total != 92776) throw new Exception($"Expected XMA total 92776, received {total?.ToString() ?? "null"}.");
+Console.WriteLine("XMA total-result regression passed.");
 
 namespace Bibliognost.Providers.XivModArchive
 {

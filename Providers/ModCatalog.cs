@@ -33,7 +33,7 @@ public sealed class ModCatalog(IEnumerable<IModProvider> providers, Configuratio
                 .Select(group => group.First())
                 .ToArray();
             var providerWarnings = results.Where(x => !x.Result.Success).Select(x => $"{x.Provider.DisplayName}: {x.Result.Error}").ToArray();
-            return new ProviderResult<IReadOnlyList<ModSummary>>(true, providerPage, providerWarnings.Length == 0 ? null : string.Join("  ", providerWarnings.Distinct()));
+            return new ProviderResult<IReadOnlyList<ModSummary>>(true, providerPage, providerWarnings.Length == 0 ? null : string.Join("  ", providerWarnings.Distinct()), successes.Select(x => x.Result.TotalCount).FirstOrDefault(x => x.HasValue));
         }
         var unique = successes.SelectMany(x => x.Result.Value!).GroupBy(x => $"{x.ProviderId}:{x.RemoteId}").Select(g => g.First());
         var groups = new List<List<ModSummary>>();
@@ -52,7 +52,9 @@ public sealed class ModCatalog(IEnumerable<IModProvider> providers, Configuratio
         var warnings = results.Where(x => !x.Result.Success).Select(x => $"{x.Provider.DisplayName}: {x.Result.Error}").ToArray();
         var timeline = merged.ToArray();
         if (selection == ProviderSelection.All) timeline = timeline.Skip((Math.Max(1, query.Page) - 1) * 24).Take(24).ToArray();
-        return new ProviderResult<IReadOnlyList<ModSummary>>(true, timeline, warnings.Length == 0 ? null : string.Join("  ", warnings.Distinct()));
+        var providerTotals = successes.GroupBy(x => x.Provider.Id).Select(group => group.Select(x => x.Result.TotalCount).FirstOrDefault(count => count.HasValue)).ToArray();
+        var aggregateTotal = providerTotals.All(count => count.HasValue) ? providerTotals.Sum(count => count!.Value) : (int?)null;
+        return new ProviderResult<IReadOnlyList<ModSummary>>(true, timeline, warnings.Length == 0 ? null : string.Join("  ", warnings.Distinct()), aggregateTotal);
     }
 
     public async Task<ProviderResult<ModDetails>> GetDetailsAsync(ModSummary summary, CancellationToken cancellationToken = default)

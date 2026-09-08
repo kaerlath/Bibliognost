@@ -42,6 +42,8 @@ public sealed class XmaProvider(XmaHttpClient http) : IModProvider
             pairs["types"] = string.Join(',', query.Types.Count > 0 ? query.Types : AllTypeIds);
             var url = "search?" + string.Join('&', pairs.Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}"));
             var html = await http.GetStringAsync(url, cancellationToken);
+            var totalCount = XmaParser.ParseSearchTotal(html);
+            if (query.PublishedTodayOnly) totalCount = null; // This view applies a local per-card date check.
             var parsed = XmaParser.ParseSearch(html);
             if (query.PublishedTodayOnly || query.Sort is ModSort.Newest or ModSort.Updated)
             {
@@ -63,7 +65,7 @@ public sealed class XmaProvider(XmaHttpClient http) : IModProvider
             foreach (var mod in parsed) knownMods[mod.RemoteId] = mod;
             if (parsed.Count == 0 && (html.Contains("cf-chl-", StringComparison.OrdinalIgnoreCase) || html.Contains("Just a moment", StringComparison.OrdinalIgnoreCase)))
                 return ProviderResult<IReadOnlyList<ModSummary>>.Fail("XMA's anti-bot page blocked this request.");
-            return ProviderResult<IReadOnlyList<ModSummary>>.Ok(parsed);
+            return ProviderResult<IReadOnlyList<ModSummary>>.Ok(parsed, totalCount);
 
             void Add(string key, string value)
             {

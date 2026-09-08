@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.25.4 — Accurate search totals
+
+- Changed search status from the misleading current-page count to “shown” and “total matches” values.
+- Added exact XMA total-result parsing from its search summary and Heliosphere totals from GraphQL `pageInfo.total`.
+- Reports the returned Nexus feed size and labels combined-source totals as provider matches because cross-posted entries can overlap.
+- Added an XMA total-result parser regression test.
+
 ## 0.25.3 — Themed settings disclosures
 
 - Replaced the stock grey settings disclosure bars with custom four-corner gradients derived from the active Bibliognost color palette.

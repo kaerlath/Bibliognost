@@ -21,6 +21,9 @@ public sealed class HeliosphereProvider(HeliosphereHttpClient http) : IModProvid
                 ? await http.QueryAsync(SearchQuery, SearchVariables(query), cancellationToken)
                 : await http.QueryAsync(BrowseQuery, BrowseVariables(query), cancellationToken);
             var data = document.RootElement.GetProperty("data");
+            var resultNode = useSearch ? data.GetProperty("searchVersions") : data.GetProperty("packages");
+            var totalCount = resultNode.TryGetProperty("pageInfo", out var pageInfo) && pageInfo.TryGetProperty("total", out var totalNode) && totalNode.TryGetInt32(out var total) ? total : (int?)null;
+            if (query.PublishedTodayOnly) totalCount = null; // Today-only filtering is performed locally below.
             var nodes = useSearch
                 ? data.GetProperty("searchVersions").GetProperty("versions").EnumerateArray().Select(v => (Version: v, Package: v.GetProperty("variant").GetProperty("package")))
                 : data.GetProperty("packages").GetProperty("packages").EnumerateArray().Select(p => (Version: LatestVersion(p), Package: p));
@@ -30,7 +33,7 @@ public sealed class HeliosphereProvider(HeliosphereHttpClient http) : IModProvid
             if (!string.IsNullOrWhiteSpace(query.Gender)) results.RemoveAll(x => !x.Tags.Any(t => t.Contains(query.Gender, StringComparison.OrdinalIgnoreCase)));
             if (query.PublishedTodayOnly) results.RemoveAll(x => x.PublishedAt?.ToLocalTime().Date != DateTimeOffset.Now.Date);
             foreach (var mod in results) knownMods[mod.RemoteId] = mod;
-            return ProviderResult<IReadOnlyList<ModSummary>>.Ok(results);
+            return ProviderResult<IReadOnlyList<ModSummary>>.Ok(results, totalCount);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidDataException or JsonException or KeyNotFoundException)
         {
