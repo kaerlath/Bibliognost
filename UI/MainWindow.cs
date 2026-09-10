@@ -381,6 +381,25 @@ public sealed class MainWindow : Window
         latestReleases = false; highestVisitedPage = 1; GoToPage(1);
     }
 
+    private void ShowAuthorMods(string creator)
+    {
+        search = string.Empty;
+        ClearFilters();
+        author = creator.Trim();
+        providerSelection = (int)ProviderSelection.All;
+        sort = (int)ModSort.Updated;
+        latestReleases = false;
+        libraryView = 0;
+        details = null;
+        sourceDetails = [];
+        page = pageInput = 1;
+        pageInputText = "1";
+        highestVisitedPage = 1;
+        ResetCatalogScroll();
+        status = $"Finding every listing credited exactly to {author}…";
+        _ = SearchAsync();
+    }
+
     private void ShowLibrary(int view)
     {
         libraryView = view; details = null; page = 1; highestVisitedPage = 1;
@@ -426,6 +445,15 @@ public sealed class MainWindow : Window
             plugin.Configuration.InstallationQueue.RemoveAll(item => ModKey(item) == ModKey(currentDetails.Summary));
             if (!queued) plugin.Configuration.InstallationQueue.Add(currentDetails.Summary);
             plugin.Configuration.Save();
+        }
+        if (!string.IsNullOrWhiteSpace(currentDetails.Summary.Author))
+        {
+            if (BibliognostTheme.AccentButton("all-author-mods", "ALL MODS FROM THIS AUTHOR", new Vector2(235, 29)))
+            {
+                ShowAuthorMods(currentDetails.Summary.Author);
+                ImGui.CloseCurrentPopup();
+            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip($"Search every connected archive for creator: {currentDetails.Summary.Author}");
         }
         ImGui.Spacing();
         var gallery = currentDetails.ImageUrls.Count > 0 ? currentDetails.ImageUrls : currentDetails.Summary.ThumbnailUrl is null ? [] : [currentDetails.Summary.ThumbnailUrl];

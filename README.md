@@ -38,6 +38,7 @@ Settings intentionally never repopulates plaintext credentials into editable fie
 - The default catalogue is provider-neutral and sorted by latest version update first: XMA Last Version Update, Heliosphere version `updatedAt`, and Nexus `updated_timestamp` are normalized into one chronological timeline. **Latest Releases** remains the explicit original-publication-date view.
 - Search status distinguishes the number of cards currently shown from the provider-reported total number of matches; combined views identify their summed count as provider matches because cross-posts may overlap.
 - Opening Bibliognost or changing the active page, search, saved search, library view, or refresh starts the new result set at the top.
+- A mod showcase can launch an all-source author search using the creator credit exactly as displayed on that listing.
 - Selecting a mod opens a centered showcase overlay with a large title, hero gallery, dossier, source choices, and installation actions without resizing or reflowing the catalogue behind it.
 - Library Tools provides a validated installation queue, structured local history, and saved-search watchlists. Provider credentials, capability health, request diagnostics, refresh controls, and privacy-safe report export are consolidated in Settings.
 - Settings uses collapsible, task-oriented sections; all wordmark, catalog, dossier, description, and action typography controls are grouped beneath a single nested Typography area.

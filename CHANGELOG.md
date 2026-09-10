@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.6 — Browse by creator
+
+- Added an **All Mods From This Author** action to every mod showcase with a named creator.
+- Uses the creator credit exactly as displayed by the selected listing, clears unrelated filters, searches every connected archive, and starts the results at page one and the top of the catalog.
+- Hides the action when a provider does not supply an author name.
+
 ## 0.25.5 — Predictable catalogue scrolling
 
 - Reset the catalogue to the top whenever Bibliognost opens, the user changes pages, applies a new search, opens a saved search, switches to a library view, or forces a refresh.
