@@ -77,6 +77,7 @@ public sealed class MainWindow : Window
         // Closing a Dalamud window only hides it, so the previous in-memory results remain.
         // Always refresh the active view when Bibliognost is shown again while preserving
         // the user's source, filters, sort, and current page.
+        ResetCatalogScroll();
         if (libraryView != 0) ShowLibrary(libraryView); else if (!loading) _ = SearchAsync();
     }
 
@@ -363,6 +364,7 @@ public sealed class MainWindow : Window
         libraryView = 0;
         page = pageInput = Math.Max(1, target); pageInputText = page.ToString();
         highestVisitedPage = Math.Max(highestVisitedPage, page);
+        ResetCatalogScroll();
         _ = SearchAsync();
     }
 
@@ -382,6 +384,7 @@ public sealed class MainWindow : Window
     private void ShowLibrary(int view)
     {
         libraryView = view; details = null; page = 1; highestVisitedPage = 1;
+        ResetCatalogScroll();
         mods.Clear();
         mods.AddRange(view == 1 ? plugin.Configuration.FavoriteMods : plugin.Configuration.RecentlyViewedMods);
         status = view == 1 ? $"{mods.Count} favorite mod(s)." : $"{mods.Count} recently viewed mod(s).";
@@ -831,6 +834,7 @@ public sealed class MainWindow : Window
     internal void ForceRefresh()
     {
         plugin.Catalog.ClearSearchCache();
+        ResetCatalogScroll();
         _ = SearchAsync();
     }
 
@@ -840,7 +844,14 @@ public sealed class MainWindow : Window
         providerSelection = Math.Clamp(saved.Provider, 0, 3); sort = Math.Clamp(saved.Sort, 0, 5);
         selectedTypes.Clear(); foreach (var type in saved.Types) selectedTypes.Add(type);
         page = 1; highestVisitedPage = 1; libraryView = 0; saved.NewResultCount = 0; plugin.Configuration.Save();
+        ResetCatalogScroll();
         _ = SearchAsync();
+    }
+
+    private void ResetCatalogScroll()
+    {
+        plugin.Configuration.LastCatalogScrollY = 0f;
+        restoreCatalogScroll = true;
     }
 
     private void DrawSaveSearchPopup()

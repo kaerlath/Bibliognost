@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.25.5 — Predictable catalogue scrolling
+
+- Reset the catalogue to the top whenever Bibliognost opens, the user changes pages, applies a new search, opens a saved search, switches to a library view, or forces a refresh.
+- Prevented a previous page's bottom scroll offset from being carried into newly loaded results.
+
 ## 0.25.4 — Accurate search totals
 
 - Changed search status from the misleading current-page count to “shown” and “total matches” values.
